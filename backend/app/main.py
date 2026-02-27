@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.v1 import interviews, templates, webhooks, websocket
 from app.core.config import settings
 from app.core.database import connect_db, disconnect_db
 
@@ -43,6 +44,12 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    prefix = "/api/v1"
+    app.include_router(interviews.router, prefix=prefix)
+    app.include_router(templates.router,  prefix=prefix)
+    app.include_router(webhooks.router,   prefix=prefix)
+    app.include_router(websocket.router,  prefix=prefix)
+
     @app.get("/api/v1/health", tags=["Health"])
     async def health_check():
         return {
@@ -56,6 +63,14 @@ def create_app() -> FastAPI:
         return JSONResponse(
             status_code=exc.status_code,
             content={"error": {"message": exc.detail}},
+        )
+
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(request: Request, exc: Exception):
+        logger.exception("Unhandled exception on %s %s", request.method, request.url)
+        return JSONResponse(
+            status_code=500,
+            content={"error": {"message": "An unexpected error occurred."}},
         )
 
     return app
