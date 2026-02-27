@@ -12,6 +12,18 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    ALLOWED_MIME_TYPES: list[str] = [
+        "audio/mpeg",
+        "audio/mp4",
+        "audio/wav",
+        "audio/x-wav",
+        "audio/webm",
+        "audio/ogg",
+        "video/mp4",
+        "video/quicktime",
+        "video/webm",
+    ]
+
     ENVIRONMENT: Literal["development", "production", "test"] = "development"
 
     MONGODB_URL: str = ""

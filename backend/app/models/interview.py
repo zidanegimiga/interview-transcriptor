@@ -64,6 +64,7 @@ class QAPair(BaseModel):
 
 
 class AIAnalysis(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     summary:           str
     candidate_summary: str
     sentiment:         SentimentBreakdown
