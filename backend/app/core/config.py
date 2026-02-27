@@ -24,6 +24,8 @@ class Settings(BaseSettings):
         "video/webm",
     ]
 
+    BACKEND_URL: str | None = None
+
     ENVIRONMENT: Literal["development", "production", "test"] = "development"
 
     MONGODB_URL: str = ""
