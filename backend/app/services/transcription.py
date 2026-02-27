@@ -145,6 +145,16 @@ def _speaker_label(speaker_int) -> str:
     return labels[idx] if idx < len(labels) else str(idx)
 
 
+def _parse_sentiment(sentiment_data) -> str | None:
+    """Extract sentiment label from Deepgram's sentiment object."""
+    if not sentiment_data:
+        return None
+    if isinstance(sentiment_data, str):
+        return sentiment_data
+    # DGram returns {"sentiment": "positive", "sentiment_score": 0.8}
+    return sentiment_data.get("sentiment")
+
+
 
 
 
