@@ -134,6 +134,42 @@ class DeepgramService:
 
 
 
+# Mock implementation for testing
+
+class MockTranscriptionService:
+    """Returns realistic fake data — no real API calls."""
+
+    async def submit(self, storage_key: str, interview_id: str) -> str:
+        logger.info("Mock transcription submitted for interview %s", interview_id)
+        return f"mock-job-{interview_id}"
+
+    async def parse_webhook(self, payload: dict) -> dict:
+        return {
+            "transcript": {
+                "text": "Interviewer: Tell me about yourself. Candidate: I have five years of Python experience.",
+                "words": [
+                    {"text": "Tell", "start_ms": 0, "end_ms": 500, "confidence": 0.99, "speaker": "A"},
+                    {"text": "me", "start_ms": 500, "end_ms": 700, "confidence": 0.99, "speaker": "A"},
+                ],
+                "utterances": [
+                    {"speaker": "A", "text": "Tell me about yourself.", "start_ms": 0, "end_ms": 2000, "sentiment": "neutral"},
+                    {"speaker": "B", "text": "I have five years of Python experience.", "start_ms": 2500, "end_ms": 6000, "sentiment": "positive"},
+                ],
+                "language_code": "en",
+                "confidence": 0.97,
+            },
+            "duration_seconds": 6.0,
+        }
+
+
+# Factory 
+
+def get_transcription_service() -> DeepgramService | MockTranscriptionService:
+    if settings.TRANSCRIPTION_BACKEND == "mock":
+        return MockTranscriptionService()
+    return DeepgramService()
+
+
 # Helper functions
 def _speaker_label(speaker_int) -> str:
     """Convert Deepgram's integer speaker index to 'A', 'B', 'C' etc."""
