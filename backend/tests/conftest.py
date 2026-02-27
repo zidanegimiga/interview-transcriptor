@@ -1,45 +1,69 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from jose import jwt
 
-from app.main import app
 from app.core.config import settings
 
 
-# for settings override
+# ── Settings override ─────────────────────────────────────────────────────────
 
 @pytest.fixture(autouse=True)
 def override_settings(monkeypatch):
-    """Force safe defaults for every test automatically."""
     monkeypatch.setattr(settings, "ENVIRONMENT", "test")
     monkeypatch.setattr(settings, "AUTH_SECRET", "test-secret")
 
 
-# HTTP client
+# ── Mock database ─────────────────────────────────────────────────────────────
+
+@pytest.fixture(autouse=True)
+def mock_db(monkeypatch):
+    """
+    Replace the real MongoDB with a mock for all tests.
+    This means tests never touch Atlas.
+    """
+    mock_collection = MagicMock()
+    mock_collection.insert_one = AsyncMock(
+        return_value=MagicMock(inserted_id="mock-inserted-id")
+    )
+    mock_collection.find_one = AsyncMock(return_value=None)
+    mock_collection.find = MagicMock(return_value=MagicMock(
+        to_list=AsyncMock(return_value=[])
+    ))
+    mock_collection.update_one = AsyncMock(return_value=None)
+    mock_collection.delete_one = AsyncMock(return_value=None)
+    mock_collection.count_documents = AsyncMock(return_value=0)
+
+    mock_database = MagicMock()
+    mock_database.__getitem__ = MagicMock(return_value=mock_collection)
+
+    monkeypatch.setattr("app.core.database._db", mock_database)
+
+    return mock_database
+
+
+# ── HTTP client ───────────────────────────────────────────────────────────────
 
 @pytest.fixture
 async def client():
-    """Async test client wired directly to the app — no real network."""
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://testserver",
-    ) as ac:
-        yield ac
+    """
+    Async test client.
+    We patch connect_db and disconnect_db so the lifespan
+    does not try to reach Atlas during tests.
+    """
+    with patch("app.core.database.connect_db", new=AsyncMock()), \
+         patch("app.core.database.disconnect_db", new=AsyncMock()):
+        async with AsyncClient(
+            transport=ASGITransport(app=__import__("app.main", fromlist=["app"]).app),
+            base_url="http://testserver",
+        ) as ac:
+            yield ac
 
 
-# Auth helpers
+# ── Auth helpers ──────────────────────────────────────────────────────────────
 
 @pytest.fixture
 def make_token():
-    """
-    Factory fixture — create a JWT with any role.
-
-    Usage:
-        token = make_token() -----# default hr_manager
-        token = make_token(role="admin")
-        token = make_token(role="viewer")
-    """
     def _make(
         user_id: str = "test-user-id",
         email: str = "test@example.com",
@@ -55,17 +79,14 @@ def make_token():
 
 @pytest.fixture
 def auth_headers(make_token):
-    """Ready-made auth headers for an hr_manager user."""
     return {"Authorization": f"Bearer {make_token()}"}
 
 
 @pytest.fixture
 def admin_headers(make_token):
-    """Ready-made auth headers for an admin user."""
     return {"Authorization": f"Bearer {make_token(role='admin')}"}
 
 
 @pytest.fixture
 def viewer_headers(make_token):
-    """Ready-made auth headers for a viewer user."""
     return {"Authorization": f"Bearer {make_token(role='viewer')}"}
