@@ -1,0 +1,44 @@
+# Web framework
+fastapi==0.111.1
+uvicorn[standard]==0.30.1
+python-multipart==0.0.9
+ 
+# Database
+motor==3.4.0
+pymongo==4.8.0
+ 
+# Storage (S3-compatible: covers MinIO or Cloudflare R2 or AWS S3)
+boto3==1.34.144
+botocore==1.34.144
+ 
+# AI Services
+deepgram-sdk==3.5.1
+openai==1.35.13
+ 
+# Auth
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+ 
+# Notifications
+resend==2.2.0
+ 
+# Validation
+pydantic==2.8.2
+pydantic-settings==2.3.4
+ 
+# Export
+reportlab==4.2.2
+python-docx==1.1.2
+ 
+# Utilities
+python-magic==0.4.27
+aiofiles==23.2.1
+httpx==0.27.0
+tenacity==8.4.1
+ 
+# Testing
+pytest==8.2.2
+pytest-asyncio==0.23.7
+pytest-mock==3.14.0
+pytest-cov==5.0.0
+mongomock-motor==0.0.21
