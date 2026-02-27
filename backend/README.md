@@ -29,3 +29,7 @@ backend/
 ├── Dockerfile
 └── README.md
 ```
+
+
+
+- I had to leave Allow all IPs  setting open given that we are connecting 
