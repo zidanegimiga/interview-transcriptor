@@ -14,14 +14,14 @@ class Settings(BaseSettings):
 
     ENVIRONMENT: Literal["development", "production", "test"] = "development"
 
-    MONGODB_URL: str = "mongodb://localhost:27017/hr_interviews"
+    MONGODB_URL: str = ""
     MONGODB_DB_NAME: str = "hr_interviews"
 
     STORAGE_BACKEND: Literal["s3", "mock"] = "s3"
     S3_ENDPOINT_URL: str | None = None
     S3_ACCESS_KEY: str = ""
     S3_SECRET_KEY: str = ""
-    S3_BUCKET_NAME: str = "interviews"
+    S3_BUCKET_NAME: str = ""
     S3_REGION: str = "auto"
 
     DEEPGRAM_API_KEY: str = ""
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     TRANSCRIPTION_BACKEND: Literal["deepgram", "mock"] = "deepgram"
     DEEPGRAM_WEBHOOK_SECRET: str = ""
 
-    AUTH_SECRET: str = "change-me"
+    AUTH_SECRET: str = ""
 
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = "noreply@hr-platform.com"
