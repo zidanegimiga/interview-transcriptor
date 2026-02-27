@@ -228,7 +228,6 @@ async def get_status(interview_id: str, user: CurrentUser, db: DBDep):
 
 
 # Transcribe
-
 @router.post("/{interview_id}/transcribe")
 async def transcribe_interview(interview_id: str, user: CurrentUser, db: DBDep):
     try:
@@ -240,7 +239,32 @@ async def transcribe_interview(interview_id: str, user: CurrentUser, db: DBDep):
     if not doc:
         raise HTTPException(status_code=404, detail="Interview not found.")
 
-    return ok({"id": interview_id, "message": "Transcription pipeline coming in Stage 4."})
+    # Idempotency: not resubmitting if already transcribing or done
+    if doc.get("status") in ("transcribing", "analysing", "completed"):
+        return ok({"id": interview_id, "message": "Already transcribed or in progress."})
+
+    from app.services.transcription import get_transcription_service
+    from datetime import datetime, timezone
+
+    service = get_transcription_service()
+    try:
+        job_id = await service.submit(
+            storage_key=doc["storage_key"],
+            interview_id=interview_id,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Transcription submission failed: {str(exc)}")
+
+    await db["interviews"].update_one(
+        {"_id": oid},
+        {"$set": {
+            "status":          "queued",
+            "deepgram_job_id": job_id,
+            "updated_at":      datetime.now(timezone.utc),
+        }}
+    )
+
+    return ok({"id": interview_id, "status": "queued", "job_id": job_id})
 
 
 # Analyse
