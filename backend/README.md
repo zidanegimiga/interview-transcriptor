@@ -73,7 +73,7 @@ Ensure virtual environment is running:
 
 ## Tradeoffs and Decisions
 
-- I had to leave Allow all IPs  setting open given that we are connecting 
+- I had to leave Allow all IPs setting open given that we are connecting 
 
 
 
