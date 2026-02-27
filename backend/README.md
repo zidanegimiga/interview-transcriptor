@@ -2,32 +2,28 @@
 
 ## Folder Structure
 
-```
-backend/
-├── app/
-│   ├── api/
-│   │   └── v1/
-│   │       ├── endpoints/
-│   │       └── api.py - main file
-│   ├── core/
-│   │   ├── config.py
-│   │   └── database.py
-│   ├── models/
-│   ├── schemas/
-│   ├── services/
-│   │   ├── transcription_service.py
-│   │   └── analysis_service.py
-│   ├── repositories/
-│   │   └── interview_repository.py
-│   └── main.py
+```bash
+app/
+├── main.py                ← Entry point (FastAPI app created here)
+├── core/                  ← Infrastructure layer
+│    ├── config.py         ← Settings
+│    ├── database.py       ← DB connection/session
+│    └── deps.py           ← Dependency injection
 │
-├── tests/
-│   ├── test_health.py
-│   └── test_interviews.py
+├── api/
+│    └── v1/               ← API layer (versioned routes)
+│         ├── interviews.py - Core interview endpoints
+│         ├── templates.py  - Template management
+│         ├── webhooks.py   - External callback handlers like Deepgram webhook
+│         └── websocket.py  - Realtime communication
 │
-├── .env.example
-├── Dockerfile
-└── README.md
+├── models/                ← Data layer (schemas + ORM)
+│
+├── services/              ← Business logic layer
+│    ├── transcription.py
+│    ├── analysis.py
+│    ├── notification.py
+│    └── storage.py
 ```
 
 ## Env
@@ -78,3 +74,24 @@ Ensure virtual environment is running:
 ## Tradeoffs and Decisions
 
 - I had to leave Allow all IPs  setting open given that we are connecting 
+
+
+
+## Miscellaneous
+Useful bash commands:
+
+- Freeze requirements
+```bash
+pip freeze > requirements.txt
+pip install -r requirements.txt
+```
+
+- List all files not including .pyc and __pycache__ folders
+```bash
+find . -type d \( -name "__pycache__" -o -name ".pytest_cache" -o -name "venv" -o -name ".venv" -o -name ".git" \) -prune -o -print
+```
+
+- Running tests
+```bash
+pytest tests/ -v
+```
