@@ -134,5 +134,17 @@ class DeepgramService:
 
 
 
+# Helper functions
+def _speaker_label(speaker_int) -> str:
+    """Convert Deepgram's integer speaker index to 'A', 'B', 'C' etc."""
+    if speaker_int is None:
+        return "A"
+    labels = "ABCDEFGHIJ"
+    idx = int(speaker_int)
+
+    return labels[idx] if idx < len(labels) else str(idx)
+
+
+
 
 
