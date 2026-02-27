@@ -59,33 +59,33 @@ MOCK_GPT_RESULT = {
 
 @pytest.mark.asyncio
 async def test_run_analysis_completes_successfully():
-    with patch("app.services.analysis.get_db") as mock_get_db, \
+    mock_db = MagicMock()
+    mock_db.__getitem__ = MagicMock(return_value=MagicMock(
+        find_one=AsyncMock(side_effect=[
+            make_mock_interview(),
+            None,
+        ]),
+        update_one=AsyncMock(),
+    ))
+
+    with patch("app.services.analysis.get_db", return_value=mock_db), \
          patch("app.services.analysis.AsyncOpenAI") as mock_openai_cls, \
          patch("app.services.analysis.manager") as mock_manager:
 
-        # Mock DB
-        mock_db = MagicMock()
-        mock_db["interviews"].find_one = AsyncMock(return_value=make_mock_interview())
-        mock_db["interviews"].update_one = AsyncMock()
-        mock_db["interview_templates"].find_one = AsyncMock(return_value=None)
-        mock_get_db.return_value = mock_db
-
-        # Mock OpenAI
         mock_client = AsyncMock()
         mock_client.chat.completions.create = AsyncMock(
             return_value=make_mock_openai_response(MOCK_GPT_RESULT)
         )
         mock_openai_cls.return_value = mock_client
-
-        # Mock WebSocket manager
         mock_manager.send_to_user = AsyncMock()
 
         from app.services.analysis import run_analysis
         await run_analysis("507f1f77bcf86cd799439011", "test-user-id")
 
         # DB was updated with completed status
-        mock_db["interviews"].update_one.assert_called_once()
-        call_args = mock_db["interviews"].update_one.call_args
+        interviews_collection = mock_db["interviews"]
+        interviews_collection.update_one.assert_called_once()
+        call_args = interviews_collection.update_one.call_args
         set_data = call_args[0][1]["$set"]
         assert set_data["status"] == "completed"
         assert set_data["ai_analysis"]["summary"] == MOCK_GPT_RESULT["summary"]
