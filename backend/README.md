@@ -53,7 +53,6 @@ source .venv/bin/activate
 
 pip install -r ../requirements.txt
 
-source .venv/bin/activate
 python -m uvicorn app.main:app --reload
 ```
 
@@ -68,6 +67,12 @@ INFO | Uvicorn running on http://127.0.0.1:8000
 ```
 
 Then open http://localhost:8000/api/v1/health in your browser.
+
+
+## Running Tests:
+Ensure virtual environment is running:
+
+```pytest tests/integration/test_auth.py -v```
 
 
 ## Tradeoffs and Decisions
