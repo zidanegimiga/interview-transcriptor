@@ -244,7 +244,6 @@ async def transcribe_interview(interview_id: str, user: CurrentUser, db: DBDep):
 
 
 # Analyse
-
 @router.post("/{interview_id}/analyse")
 async def analyse_interview(interview_id: str, user: CurrentUser, db: DBDep):
     try:
@@ -256,7 +255,28 @@ async def analyse_interview(interview_id: str, user: CurrentUser, db: DBDep):
     if not doc:
         raise HTTPException(status_code=404, detail="Interview not found.")
 
-    return ok({"id": interview_id, "message": "Analysis pipeline coming in Stage 5."})
+    if doc.get("ai_analysis"):
+        return ok({"id": interview_id, "message": "Already analysed."})
+
+    if not doc.get("transcript"):
+        raise HTTPException(
+            status_code=400,
+            detail="Transcript not available. Run transcription first."
+        )
+
+    # update status to analysing
+    from datetime import datetime, timezone
+    await db["interviews"].update_one(
+        {"_id": oid},
+        {"$set": {"status": "analysing", "updated_at": datetime.now(timezone.utc)}}
+    )
+
+    # kick off analysis as background task
+    import asyncio
+    from app.services.analysis import run_analysis
+    asyncio.create_task(run_analysis(interview_id, user["id"]))
+
+    return ok({"id": interview_id, "message": "Analysis started."})
 
 
 # Export
