@@ -91,4 +91,28 @@ interface Interview {
   tags:             string[];
 }
 
-export type { Interview, Metrics, Template, QueuedFile, Meta, Utterance, Transcript, Keyword, QAPair, SentimentBreakdown, AIAnalysis };
+interface Template {
+  _id:          string;
+  name:         string;
+  description:  string;
+  prompt:       string;
+  focus_areas:  string[];
+  is_system:    boolean;
+  created_at:   string;
+}
+
+interface TemplateFormData {
+  name:         string;
+  description:  string;
+  prompt:       string;
+  focus_areas:  string; // comma separated
+}
+
+export const EMPTY_FORM: TemplateFormData = {
+  name:        "",
+  description: "",
+  prompt:      "",
+  focus_areas: "",
+};
+
+export type { Interview, Metrics, Template, QueuedFile, Meta, Utterance, Transcript, Keyword, QAPair, SentimentBreakdown, AIAnalysis, TemplateFormData };
