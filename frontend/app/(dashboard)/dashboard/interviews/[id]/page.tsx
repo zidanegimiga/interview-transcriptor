@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -18,7 +18,7 @@ import {
   Clock,
   FileAudio,
   MessageSquare,
-  Brain
+  Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtime } from "@/hooks/use-realtime";
 import { Interview } from "@/shared/types/dashboard";
 import AnalysisSidebar from "@/components/interviews/AnalysisSidebar";
 import { formatDuration } from "@/lib/utils";
@@ -35,55 +36,69 @@ import { ProcessingOverlay } from "@/components/interviews/ProcessingOverlay";
 import TranscriptView from "@/components/interviews/TranscriptView";
 import QAAccordion from "@/components/interviews/QAAccordion";
 
-
 export default function InterviewDetailPage() {
-  const { id }   = useParams<{ id: string }>();
-  const router   = useRouter();
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const { toast } = useToast();
 
   const [interview, setInterview] = useState<Interview | null>(null);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState<string | null>(null);
-  const pollRef = useRef<NodeJS.Timeout | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const res: any = await api.interviews.get(id);
       setInterview(res.data);
-      return res.data;
+      return res.data as Interview;
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }
-
-  useEffect(() => {
-    load();
   }, [id]);
 
-  // Poll while processing
+  // Load once on mount
   useEffect(() => {
-    if (!interview) return;
-    const isProcessing = ["queued", "transcribing", "analysing"].includes(interview.status);
-    if (isProcessing) {
-      pollRef.current = setInterval(async () => {
-        const updated = await load();
-        if (updated && !["queued", "transcribing", "analysing"].includes(updated.status)) {
-          if (pollRef.current) clearInterval(pollRef.current);
+    load();
+  }, [load]);
+
+  // WebSocket only react to events for this interview
+  useRealtime(
+    useCallback(
+      (event) => {
+        if (event.interview_id !== id) return;
+
+        if (event.type === "status_update") {
+          // Surgically update status in state
+          setInterview((prev) =>
+            prev ? { ...prev, status: event.status ?? prev.status } : prev,
+          );
+          // If moving into analysing we need the transcript so we need a full reload
+          if (event.status === "analysing") {
+            load();
+          }
         }
-      }, 4000);
-    }
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [interview?.status]);
+
+        if (event.type === "analysis_complete") {
+          // Full reload to hydrate ai_analysis + final status
+          load();
+        }
+      },
+      [id, load],
+    ),
+  );
 
   async function handleRetranscribe() {
     try {
       await api.interviews.transcribe(id);
       toast({ title: "Transcription started" });
-      load();
+      setInterview((prev) => (prev ? { ...prev, status: "queued" } : prev));
     } catch (e: any) {
-      toast({ title: "Failed", description: e.message, variant: "destructive" });
+      toast({
+        title: "Failed",
+        description: e.message,
+        variant: "destructive",
+      });
     }
   }
 
@@ -91,9 +106,13 @@ export default function InterviewDetailPage() {
     try {
       await api.interviews.analyse(id);
       toast({ title: "Analysis started" });
-      load();
+      setInterview((prev) => (prev ? { ...prev, status: "analysing" } : prev));
     } catch (e: any) {
-      toast({ title: "Failed", description: e.message, variant: "destructive" });
+      toast({
+        title: "Failed",
+        description: e.message,
+        variant: "destructive",
+      });
     }
   }
 
@@ -103,10 +122,14 @@ export default function InterviewDetailPage() {
         <Skeleton className="h-8 w-64" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-xl" />
+            ))}
           </div>
           <div className="space-y-4">
-            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-32 rounded-xl" />
+            ))}
           </div>
         </div>
       </div>
@@ -116,7 +139,10 @@ export default function InterviewDetailPage() {
   if (error || !interview) {
     return (
       <div className="glass rounded-xl p-16 flex flex-col items-center text-center max-w-md mx-auto">
-        <AlertCircle className="w-8 h-8 text-muted-foreground mb-3" strokeWidth={1.5} />
+        <AlertCircle
+          className="w-8 h-8 text-muted-foreground mb-3"
+          strokeWidth={1.5}
+        />
         <p className="text-sm font-medium">Interview not found</p>
         <p className="text-xs text-muted-foreground mt-1">{error}</p>
         <Button asChild size="sm" variant="outline" className="mt-4">
@@ -126,7 +152,9 @@ export default function InterviewDetailPage() {
     );
   }
 
-  const isProcessing = ["queued", "transcribing", "analysing"].includes(interview.status);
+  const isProcessing = ["queued", "transcribing", "analysing"].includes(
+    interview.status,
+  );
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -146,7 +174,9 @@ export default function InterviewDetailPage() {
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <StatusBadge status={interview.status} />
               <span className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(interview.created_at), { addSuffix: true })}
+                {formatDistanceToNow(new Date(interview.created_at), {
+                  addSuffix: true,
+                })}
               </span>
               {interview.duration_seconds && (
                 <>
@@ -216,15 +246,20 @@ export default function InterviewDetailPage() {
         </div>
       </div>
 
-
+      {/* Processing overlay */}
       {isProcessing && <ProcessingOverlay status={interview.status} />}
 
       {/* Failed state */}
-      {interview?.status === "failed" && (
+      {interview.status === "failed" && (
         <div className="glass rounded-xl p-6 flex items-center gap-4 border-red-500/20">
-          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" strokeWidth={1.5} />
+          <AlertCircle
+            className="w-5 h-5 text-red-500 flex-shrink-0"
+            strokeWidth={1.5}
+          />
           <div className="flex-1">
-            <p className="text-sm font-medium text-red-500">Processing failed</p>
+            <p className="text-sm font-medium text-red-500">
+              Processing failed
+            </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               Something went wrong during processing. You can try again.
             </p>
@@ -241,16 +276,18 @@ export default function InterviewDetailPage() {
         </div>
       )}
 
-      {/* Main content — only show when we have data */}
-      {(interview?.transcript || interview?.ai_analysis) && (
+      {/* Main content */}
+      {(interview.transcript || interview.ai_analysis) && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left — transcript + analysis tabs */}
+          {/* Left — tabs */}
           <div className="lg:col-span-2">
-            <Tabs defaultValue={interview?.transcript ? "transcript" : "analysis"}>
+            <Tabs
+              defaultValue={interview.transcript ? "transcript" : "summary"}
+            >
               <TabsList className="bg-white/5 border border-white/10 mb-4">
                 <TabsTrigger
                   value="transcript"
-                  disabled={!interview?.transcript}
+                  disabled={!interview.transcript}
                   className="gap-2 data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-500"
                 >
                   <FileAudio className="w-3.5 h-3.5" strokeWidth={1.5} />
@@ -258,7 +295,7 @@ export default function InterviewDetailPage() {
                 </TabsTrigger>
                 <TabsTrigger
                   value="summary"
-                  disabled={!interview?.ai_analysis}
+                  disabled={!interview.ai_analysis}
                   className="gap-2 data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-500"
                 >
                   <Brain className="w-3.5 h-3.5" strokeWidth={1.5} />
@@ -266,7 +303,7 @@ export default function InterviewDetailPage() {
                 </TabsTrigger>
                 <TabsTrigger
                   value="qa"
-                  disabled={!interview?.ai_analysis?.questions_answers?.length}
+                  disabled={!interview.ai_analysis?.questions_answers?.length}
                   className="gap-2 data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-500"
                 >
                   <MessageSquare className="w-3.5 h-3.5" strokeWidth={1.5} />
@@ -274,28 +311,33 @@ export default function InterviewDetailPage() {
                 </TabsTrigger>
               </TabsList>
 
-              {/* Transcript */}
               <TabsContent value="transcript">
                 <div className="glass rounded-xl p-4 max-h-[600px] overflow-y-auto">
                   <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
                     <p className="text-xs text-muted-foreground">
                       {interview.transcript?.utterances?.length ?? 0} segments ·{" "}
-                      Language: {interview.transcript?.language_code?.toUpperCase()}
+                      Language:{" "}
+                      {interview.transcript?.language_code?.toUpperCase()}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Confidence: {((interview.transcript?.confidence ?? 0) * 100).toFixed(0)}%
+                      Confidence:{" "}
+                      {((interview.transcript?.confidence ?? 0) * 100).toFixed(
+                        0,
+                      )}
+                      %
                     </p>
                   </div>
                   <TranscriptView transcript={interview.transcript!} />
                 </div>
               </TabsContent>
 
-              {/* Summary */}
               <TabsContent value="summary">
                 <div className="glass rounded-xl p-5 space-y-5">
                   {interview.ai_analysis?.summary && (
                     <div>
-                      <h4 className="text-sm font-semibold mb-2">Interview Summary</h4>
+                      <h4 className="text-sm font-semibold mb-2">
+                        Interview Summary
+                      </h4>
                       <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                         {interview.ai_analysis.summary}
                       </p>
@@ -305,7 +347,9 @@ export default function InterviewDetailPage() {
                     <>
                       <Separator />
                       <div>
-                        <h4 className="text-sm font-semibold mb-2">Candidate Assessment</h4>
+                        <h4 className="text-sm font-semibold mb-2">
+                          Candidate Assessment
+                        </h4>
                         <p className="text-sm text-muted-foreground leading-relaxed">
                           {interview.ai_analysis.candidate_summary}
                         </p>
@@ -315,26 +359,32 @@ export default function InterviewDetailPage() {
                 </div>
               </TabsContent>
 
-              {/* Q&A */}
               <TabsContent value="qa">
                 {interview.ai_analysis?.questions_answers?.length ? (
-                  <QAAccordion pairs={interview.ai_analysis.questions_answers} />
+                  <QAAccordion
+                    pairs={interview.ai_analysis.questions_answers}
+                  />
                 ) : (
                   <div className="glass rounded-xl p-8 text-center">
-                    <p className="text-sm text-muted-foreground">No Q&A pairs extracted</p>
+                    <p className="text-sm text-muted-foreground">
+                      No Q&A pairs extracted
+                    </p>
                   </div>
                 )}
               </TabsContent>
             </Tabs>
           </div>
 
-          {/* Right — analysis sidebar */}
+          {/* Right — sidebar */}
           <div>
             {interview.ai_analysis ? (
               <AnalysisSidebar analysis={interview.ai_analysis} />
             ) : (
               <div className="glass rounded-xl p-8 text-center">
-                <Brain className="w-6 h-6 text-muted-foreground mx-auto mb-3" strokeWidth={1.5} />
+                <Brain
+                  className="w-6 h-6 text-muted-foreground mx-auto mb-3"
+                  strokeWidth={1.5}
+                />
                 <p className="text-sm font-medium">No analysis yet</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Run analysis to see sentiment, keywords and insights
@@ -355,5 +405,5 @@ export default function InterviewDetailPage() {
         </div>
       )}
     </div>
-  )
+  );
 }
