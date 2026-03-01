@@ -18,10 +18,12 @@ logger = logging.getLogger(__name__)
 @router.post("/deepgram", status_code=status.HTTP_200_OK)
 async def deepgram_webhook(
     request: Request,
+    interview_id: str | None = None,
     x_dg_signature: str | None = Header(None, alias="x-dg-signature"),
 ):
     """
     Receives Deepgram's completion callback.
+    interview_id is passed as a query parameter in the callback URL.
     1. Validates HMAC signature
     2. Parses transcript
     3. Saves to MongoDB
@@ -41,16 +43,11 @@ async def deepgram_webhook(
             logger.warning("Deepgram webhook signature mismatch")
             raise HTTPException(status_code=401, detail="Invalid webhook signature.")
 
-    payload = await request.json()
-
-    # Extract interview_id from callback addons
-    interview_id = (
-        payload.get("metadata", {}).get("callback_addons", {}).get("interview_id")
-        or payload.get("interview_id")
-    )
     if not interview_id:
-        logger.warning("Deepgram webhook missing interview_id")
+        logger.warning("Deepgram webhook missing interview_id query param")
         return {"received": True}
+
+    payload = await request.json()
 
     # Parse the transcript
     service = get_transcription_service()
@@ -93,7 +90,7 @@ async def deepgram_webhook(
             "updated_at":   now.isoformat(),
         })
 
-    # Trigger AI analysis as background task
+    # Trigger AI analysis
     # importing here to avoid circular imports
     from app.services.analysis import run_analysis
     import asyncio

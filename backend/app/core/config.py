@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     S3_SECRET_KEY: str = ""
     S3_BUCKET_NAME: str = ""
     S3_REGION: str = "auto"
+    ANALYSIS_BACKEND: str = "openai"  # openai | mock
 
     DEEPGRAM_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
