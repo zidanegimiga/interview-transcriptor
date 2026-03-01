@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     def CORS_ORIGINS(self) -> list[str]:
         origins = [self.FRONTEND_URL]
         if self.ENVIRONMENT == "development":
-            origins += ["http://localhost:3000", "http://127.0.0.1:3000"]
+            origins += ["http://localhost:3000", "http://127.0.0.1:3000", "https://interview-transcriptor-frontend.vercel.app"]
         return list(set(origins))
 
     @property
