@@ -75,6 +75,17 @@ Ensure virtual environment is running:
 
 - I had to leave Allow all IPs setting open given that we are connecting 
 
+Regarding analysis, Deepgram offers Intelligence features built into the transcription response itself, no separate API call needed. The useful ones for this app are:
+summarize=True — generates a summary
+detect_topics=True — extracts topics
+intents=True — detects speaker intents
+sentiment=True — per-utterance sentiment (we already have this)
+
+These are cheaper than GPT but less detailed i.e:
+no Q&A extraction, no strengths/red flags, no candidate assessment.
+I'm using GPT-4o-mini as the primary analysis engine once I add credits, and optionally use Deepgram's summarize and sentiment as a fast fallback. 
+
+For now I am using a mock to get me unblocked.
 
 
 ## Miscellaneous
