@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   FileAudio,
@@ -16,7 +16,7 @@ import { api } from "@/lib/api";
 import { Interview, Metrics } from "@/shared/types/dashboard";
 import StatCard from "@/components/dashboard/StatCard";
 import InterviewRow from "@/components/dashboard/InterviewRow";
-
+import { useRealtime } from "@/hooks/use-realtime";
 
 export default function DashboardPage() {
   const [interviews, setInterviews] = useState<Interview[]>([]);
@@ -25,19 +25,51 @@ export default function DashboardPage() {
   const [loadingMetrics, setLoadingMetrics] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    api.interviews
-      .list("?page=1&limit=8")
-      .then((res: any) => setInterviews(res.data ?? []))
-      .catch((e) => setError(e.message))
-      .finally(() => setLoadingList(false));
-
-    api.interviews
-      .metrics()
-      .then((res: any) => setMetrics(res.data))
-      .catch(() => {})
-      .finally(() => setLoadingMetrics(false));
+  const loadData = useCallback(async () => {
+    setLoadingList(true);
+    setLoadingMetrics(true);
+    setError(null);
+    try {
+      const [listRes, metricsRes]: any[] = await Promise.all([
+        api.interviews.list("?page=1&limit=8"),
+        api.interviews.metrics().catch(() => null),
+      ]);
+      setInterviews(listRes.data ?? []);
+      if (metricsRes) setMetrics(metricsRes.data);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoadingList(false);
+      setLoadingMetrics(false);
+    }
   }, []);
+
+  // Load once on mount
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Real-time updates — surgically update status in list, refresh metrics
+  useRealtime(
+    useCallback((event) => {
+      if (
+        event.type === "status_update" ||
+        event.type === "analysis_complete"
+      ) {
+        setInterviews((prev) =>
+          prev.map((i) =>
+            i._id === event.interview_id
+              ? { ...i, status: event.status ?? i.status }
+              : i,
+          ),
+        );
+        api.interviews
+          .metrics()
+          .then((res: any) => setMetrics(res.data))
+          .catch(() => {});
+      }
+    }, []),
+  );
 
   const total = metrics
     ? Object.values(metrics.by_status).reduce((a, b) => a + b, 0)
@@ -107,6 +139,7 @@ export default function DashboardPage() {
         />
       </div>
 
+      {/* Recent interviews */}
       <div className="glass rounded-xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
