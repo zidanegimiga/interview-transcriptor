@@ -68,32 +68,33 @@ const config: Config = {
           "50%":      { opacity: "0.4" },
         },
         "breathing": {
-          "0%, 100%": { transform: "scale(1)",    opacity: "0.8" },
-          "50%":      { transform: "scale(1.03)", opacity: "1"   },
+          "0%, 100%": { opacity: "0.8", transform: "scale(1)" },
+          "50%":      { opacity: "1",   transform: "scale(1.02)" },
         },
-        "glow-pulse": {
-          "0%, 100%": { boxShadow: "0 0 10px rgba(147, 51, 234, 0.3)" },
-          "50%":      { boxShadow: "0 0 25px rgba(147, 51, 234, 0.6)" },
+        "shimmer": {
+          "100%": { transform: "translateX(100%)" },
         },
         "fade-in": {
           from: { opacity: "0", transform: "translateY(4px)" },
           to:   { opacity: "1", transform: "translateY(0)" },
         },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 8px rgba(16,185,129,0.2)" },
+          "50%":      { boxShadow: "0 0 20px rgba(16,185,129,0.4)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up":   "accordion-up 0.2s ease-out",
-        "pulse-slow":     "pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "breathing":      "breathing 3s ease-in-out infinite",
-        "glow-pulse":     "glow-pulse 2s ease-in-out infinite",
+        "pulse-slow":     "pulse-slow 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "breathing":      "breathing 4s ease-in-out infinite",
+        "shimmer":        "shimmer 2s infinite",
         "fade-in":        "fade-in 0.3s ease-out",
+        "glow-pulse":     "glow-pulse 2s ease-in-out infinite",
       },
       backgroundImage: {
-        "purple-radial": "radial-gradient(ellipse at center, rgba(147,51,234,0.15), transparent 70%)",
-        "mesh-dark": `
-          radial-gradient(ellipse 60% 40% at 30% 40%, rgba(147,51,234,0.15), transparent),
-          radial-gradient(ellipse 50% 50% at 70% 60%, rgba(79,70,229,0.12), transparent)
-        `,
+        "hero-gradient":    "radial-gradient(circle at 50% 0%, hsla(var(--primary) / 0.1), transparent)",
+        "mesh-dark":        "radial-gradient(circle at 50% -20%, rgba(16,185,129,0.08), transparent)",
       },
     },
   },
