@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { AuthProvider } from "@/components/providers/auth-provider";
 import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({
@@ -12,7 +13,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: {
     template: "%s | HR Interview Platform",
-    default: "HR Interview Platform",
+    default:  "HR Interview Platform",
   },
   description: "AI-powered interview transcription and analysis",
 };
@@ -31,8 +32,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Toaster />
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
