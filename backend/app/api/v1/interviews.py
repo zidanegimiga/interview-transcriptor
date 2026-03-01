@@ -11,6 +11,7 @@ from app.models.interview import InterviewStatus, UpdateInterviewRequest
 from app.services.storage import get_storage_backend
 from app.services.transcription import get_transcription_service
 from app.services.analysis import run_analysis
+from app.main import limiter
 
 router = APIRouter(prefix="/interviews", tags=["Interviews"])
 
@@ -27,6 +28,7 @@ def _serialize(doc: dict) -> dict:
 # Upload 
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def upload_interview(
     user: CurrentUser,
     db: DBDep,
@@ -121,6 +123,7 @@ async def list_interviews(
 # Metrics 
 
 @router.get("/metrics")
+@limiter.limit("10/minute")
 async def get_metrics(user: CurrentUser, db: DBDep):
     status_pipeline = [
         {"$match": {"user_id": user["id"]}},
@@ -153,6 +156,7 @@ async def get_metrics(user: CurrentUser, db: DBDep):
 # Get one 
 
 @router.get("/{interview_id}")
+@limiter.limit("10/minute")
 async def get_interview(interview_id: str, user: CurrentUser, db: DBDep):
     try:
         oid = ObjectId(interview_id)
@@ -168,6 +172,7 @@ async def get_interview(interview_id: str, user: CurrentUser, db: DBDep):
 
 # Update
 @router.patch("/{interview_id}")
+@limiter.limit("10/minute")
 async def update_interview(
     interview_id: str,
     payload: UpdateInterviewRequest,
@@ -198,6 +203,7 @@ async def update_interview(
 # Delete
 
 @router.delete("/{interview_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def delete_interview(interview_id: str, user: CurrentUser, db: DBDep):
     try:
         oid = ObjectId(interview_id)
@@ -212,6 +218,7 @@ async def delete_interview(interview_id: str, user: CurrentUser, db: DBDep):
 # ── Status 
 
 @router.get("/{interview_id}/status")
+@limiter.limit("10/minute")
 async def get_status(interview_id: str, user: CurrentUser, db: DBDep):
     try:
         oid = ObjectId(interview_id)
@@ -236,6 +243,7 @@ async def get_status(interview_id: str, user: CurrentUser, db: DBDep):
 # transcribe 
 
 @router.post("/{interview_id}/transcribe")
+@limiter.limit("10/minute")
 async def transcribe_interview(interview_id: str, user: CurrentUser, db: DBDep):
     try:
         oid = ObjectId(interview_id)
@@ -274,6 +282,7 @@ async def transcribe_interview(interview_id: str, user: CurrentUser, db: DBDep):
 
 # Analyse
 @router.post("/{interview_id}/analyse")
+@limiter.limit("10/minute")
 async def analyse_interview(interview_id: str, user: CurrentUser, db: DBDep):
     try:
         oid = ObjectId(interview_id)
@@ -305,6 +314,7 @@ async def analyse_interview(interview_id: str, user: CurrentUser, db: DBDep):
 
 # Export
 @router.get("/{interview_id}/export")
+@limiter.limit("10/minute")
 async def export_transcript(
     interview_id: str,
     user: CurrentUser,
@@ -340,6 +350,7 @@ async def export_transcript(
 
 # Batch upload
 @router.post("/batch-upload", status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def batch_upload(
     user: CurrentUser,
     db: DBDep,
