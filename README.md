@@ -392,6 +392,9 @@ All database operations use Motor (async MongoDB driver) so that I/O-bound opera
 
 ### What would be improved with more time
 
+**OpenAI key**
+The current implementation uses a mock analysis backend for development and testing. A real OpenAI API key would be needed for production analysis. The `ANALYSIS_BACKEND=mock` mode is available for development and testing.
+
 **Token revocation and session security**
 The current JWT implementation has no revocation mechanism. A Redis-backed blocklist or shorter-lived tokens with refresh token rotation would be needed before handling genuinely sensitive HR data.
 
