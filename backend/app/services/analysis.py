@@ -51,7 +51,6 @@ Rules:
 
 
 def _build_prompt(transcript_text: str, template_prompt: str | None = None) -> str:
-    """Build the user message. Inject template instructions if provided."""
     base = f"Please analyse the following interview transcript:\n\n{transcript_text}"
     if template_prompt:
         base = f"Additional focus instructions:\n{template_prompt}\n\n{base}"
@@ -71,6 +70,110 @@ def _truncate_transcript(text: str, max_chars: int = 80000) -> str:
     return text[:keep_start] + truncation_notice + text[-keep_end:]
 
 
+# Mock analysis data
+
+MOCK_ANALYSIS = {
+    "summary": (
+        "The interview was conducted between an HR manager and a software engineering candidate "
+        "with five years of Python experience. The conversation covered technical skills, "
+        "past projects, and team collaboration.\n\n"
+        "The candidate demonstrated strong knowledge of Python, FastAPI, and cloud infrastructure. "
+        "They described a successful project migrating a monolith to microservices, resulting in "
+        "a 40% reduction in latency.\n\n"
+        "Cultural fit questions revealed a collaborative work style and strong communication skills. "
+        "The candidate expressed genuine enthusiasm for the role and the company's mission."
+    ),
+    "candidate_summary": (
+        "Strong technical candidate with solid Python fundamentals and practical experience "
+        "in production systems. Demonstrates clear communication, ownership mentality, and "
+        "enthusiasm. Recommended for a second round technical interview."
+    ),
+    "sentiment": {
+        "overall": "positive",
+        "score": 0.72,
+        "notes": "Candidate was confident and engaged throughout. Interviewer tone was warm and encouraging.",
+        "by_speaker": {
+            "A": {"overall": "neutral",  "score": 0.15},
+            "B": {"overall": "positive", "score": 0.82},
+        },
+    },
+    "keywords": [
+        {"term": "Python",        "category": "technology",  "frequency": 8},
+        {"term": "FastAPI",       "category": "technology",  "frequency": 5},
+        {"term": "microservices", "category": "technology",  "frequency": 4},
+        {"term": "PostgreSQL",    "category": "technology",  "frequency": 3},
+        {"term": "leadership",    "category": "soft_skill",  "frequency": 3},
+        {"term": "Docker",        "category": "tool",        "frequency": 3},
+        {"term": "problem solving","category": "competency", "frequency": 2},
+        {"term": "communication", "category": "soft_skill",  "frequency": 2},
+        {"term": "AWS",           "category": "technology",  "frequency": 2},
+        {"term": "REST APIs",     "category": "skill",       "frequency": 2},
+    ],
+    "questions_answers": [
+        {
+            "question": "Can you tell me about yourself and your background?",
+            "answer":   "I have five years of Python experience, mostly in backend development. I've worked at two startups building APIs and data pipelines.",
+            "speaker_q": "A",
+            "speaker_a": "B",
+        },
+        {
+            "question": "What is your biggest technical achievement?",
+            "answer":   "Migrating a monolithic Django app to microservices using FastAPI, which reduced latency by 40% and improved team velocity.",
+            "speaker_q": "A",
+            "speaker_a": "B",
+        },
+        {
+            "question": "How do you handle disagreements with teammates?",
+            "answer":   "I prefer to address it directly and early. I schedule a quick call to understand their perspective before escalating.",
+            "speaker_q": "A",
+            "speaker_a": "B",
+        },
+        {
+            "question": "Where do you see yourself in five years?",
+            "answer":   "I'd like to move into a technical lead role, mentoring junior developers while still staying hands-on with architecture.",
+            "speaker_q": "A",
+            "speaker_a": "B",
+        },
+    ],
+    "strengths": [
+        "Strong Python and backend engineering fundamentals",
+        "Clear and confident communicator",
+        "Demonstrated ownership — led migration project end to end",
+        "Growth mindset — actively learning Rust and Go",
+        "Practical experience with cloud infrastructure (AWS, Docker)",
+    ],
+    "red_flags": [
+        "Limited experience with large enterprise codebases",
+        "No formal experience managing direct reports yet",
+    ],
+}
+
+
+# OpenAI analysis
+async def _run_openai_analysis(transcript_text: str, template_prompt: str | None) -> tuple[dict, int, int]:
+    """Returns (parsed_result, prompt_tokens, completion_tokens)."""
+    user_message = _build_prompt(transcript_text, template_prompt)
+    client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+    response = await client.chat.completions.create(
+        model=settings.OPENAI_MODEL,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user",   "content": user_message},
+        ],
+        temperature=0.2,
+        response_format={"type": "json_object"},
+    )
+    raw = response.choices[0].message.content
+    parsed = json.loads(raw)
+    return parsed, response.usage.prompt_tokens, response.usage.completion_tokens
+
+
+async def _run_mock_analysis(transcript_text: str) -> tuple[dict, int, int]:
+    """Returns mock data instantly — no API calls."""
+    await asyncio.sleep(1)  # Simulate a small delay
+    return MOCK_ANALYSIS, 0, 0
+
+
 # Main analysis runner
 
 async def run_analysis(interview_id: str, user_id: str | None) -> None:
@@ -86,7 +189,6 @@ async def run_analysis(interview_id: str, user_id: str | None) -> None:
         logger.error("run_analysis: invalid interview_id %s", interview_id)
         return
 
-    # Fetch interview
     interview = await db["interviews"].find_one({"_id": oid})
     if not interview:
         logger.error("run_analysis: interview not found %s", interview_id)
@@ -112,27 +214,27 @@ async def run_analysis(interview_id: str, user_id: str | None) -> None:
             if template:
                 template_prompt = template.get("prompt")
         except Exception:
-            pass  # Template fetch failure is non-fatal
+            pass
 
     # Build prompt
     transcript_text = _truncate_transcript(transcript["text"])
-    user_message = _build_prompt(transcript_text, template_prompt)
 
-    # Call GPT-4o-mini
-    logger.info("run_analysis: calling GPT for interview %s", interview_id)
+    # Choose backend
+    logger.info(
+        "run_analysis: using %s backend for interview %s",
+        settings.ANALYSIS_BACKEND,
+        interview_id,
+    )
+
     try:
-        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        response = await client.chat.completions.create(
-            model=settings.OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user",   "content": user_message},
-            ],
-            temperature=0.2,  # using low temp for consistent structured output
-            response_format={"type": "json_object"},
-        )
+        if settings.ANALYSIS_BACKEND == "mock":
+            parsed, prompt_tokens, completion_tokens = await _run_mock_analysis(transcript_text)
+        else:
+            parsed, prompt_tokens, completion_tokens = await _run_openai_analysis(
+                transcript_text, template_prompt
+            )
     except Exception as exc:
-        logger.exception("run_analysis: OpenAI call failed: %s", exc)
+        logger.exception("run_analysis: analysis failed: %s", exc)
         await _mark_failed(interview_id, f"AI analysis failed: {str(exc)}")
         if user_id:
             await manager.send_to_user(user_id, {
@@ -143,16 +245,7 @@ async def run_analysis(interview_id: str, user_id: str | None) -> None:
             })
         return
 
-    # Parse response
-    raw_content = response.choices[0].message.content
-    try:
-        parsed = json.loads(raw_content)
-    except json.JSONDecodeError as exc:
-        logger.error("run_analysis: JSON parse failed: %s\nContent: %s", exc, raw_content)
-        await _mark_failed(interview_id, "AI returned invalid JSON.")
-        return
-
-    # Build ai_analysis document
+    # Build and save ai_analysis document
     now = datetime.now(timezone.utc)
     ai_analysis = {
         "summary":           parsed.get("summary", ""),
@@ -164,9 +257,9 @@ async def run_analysis(interview_id: str, user_id: str | None) -> None:
         "questions_answers": parsed.get("questions_answers", []),
         "strengths":         parsed.get("strengths", []),
         "red_flags":         parsed.get("red_flags", []),
-        "model_used":        settings.OPENAI_MODEL,
-        "prompt_tokens":     response.usage.prompt_tokens,
-        "completion_tokens": response.usage.completion_tokens,
+        "model_used":        f"{settings.ANALYSIS_BACKEND}:{settings.OPENAI_MODEL}",
+        "prompt_tokens":     prompt_tokens,
+        "completion_tokens": completion_tokens,
         "analysed_at":       now,
     }
 
