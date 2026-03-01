@@ -43,6 +43,7 @@ project-root/
 - Python (3.11+)
 - Docker & Docker Compose
 - Git
+- Deepseek and OpenAI developer accounts
 
 
 ### 1. Start Infrastructure (MongoDB + MinIO)
