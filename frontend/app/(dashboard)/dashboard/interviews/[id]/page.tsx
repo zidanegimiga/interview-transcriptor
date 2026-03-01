@@ -35,6 +35,7 @@ import { formatDuration } from "@/lib/utils";
 import { ProcessingOverlay } from "@/components/interviews/ProcessingOverlay";
 import TranscriptView from "@/components/interviews/TranscriptView";
 import QAAccordion from "@/components/interviews/QAAccordion";
+import { getSession } from "next-auth/react";
 
 export default function InterviewDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +45,35 @@ export default function InterviewDetailPage() {
   const [interview, setInterview] = useState<Interview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleExport(format: string) {
+    try {
+      const session = (await getSession()) as any;
+      const token = session?.backendToken;
+
+      const res = await fetch(api.interviews.exportUrl(id, format), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error("Export failed");
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${interview!.title}-transcript.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast({
+        title: "Export failed",
+        description: e.message,
+        variant: "destructive",
+      });
+    }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -229,15 +259,12 @@ export default function InterviewDetailPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {["txt", "pdf", "docx"].map((fmt) => (
-                  <DropdownMenuItem key={fmt} asChild>
-                    <a
-                      href={api.interviews.exportUrl(id, fmt)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="cursor-pointer uppercase text-xs font-medium"
-                    >
-                      Export as {fmt.toUpperCase()}
-                    </a>
+                  <DropdownMenuItem
+                    key={fmt}
+                    className="cursor-pointer uppercase text-xs font-medium"
+                    onClick={() => handleExport(fmt)}
+                  >
+                    Export as {fmt.toUpperCase()}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
