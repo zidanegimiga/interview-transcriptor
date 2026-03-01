@@ -3,14 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { AnimatePresence } from "framer-motion";
-import {
-  FileAudio,
-  Search,
-  Filter,
-  AlertCircle,
-  Upload,
-
-} from "lucide-react";
+import { FileAudio, Search, Filter, AlertCircle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,35 +13,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtime } from "@/hooks/use-realtime";
 import { Interview, Meta } from "@/shared/types/dashboard";
 import InterviewCard from "@/components/shared/InterviewCard";
 import CardSkeleton from "@/components/shared/CardSkeleton";
-
 
 export default function InterviewsPage() {
   const { toast } = useToast();
 
   const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [meta, setMeta]             = useState<Meta | null>(null);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState<string | null>(null);
-  const [search, setSearch]         = useState("");
+  const [meta, setMeta] = useState<Meta | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [page, setPage]             = useState(1);
+  const [page, setPage] = useState(1);
 
+  // Stable load function — only called explicitly, never by a timer
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams();
-      params.set("page",  String(page));
+      params.set("page", String(page));
       params.set("limit", "12");
       if (statusFilter !== "all") params.set("interview_status", statusFilter);
-      if (search)                 params.set("search", search);
+      if (search) params.set("search", search);
 
       const res: any = await api.interviews.list(`?${params.toString()}`);
       setInterviews(res.data ?? []);
@@ -60,17 +52,28 @@ export default function InterviewsPage() {
     }
   }, [page, statusFilter, search]);
 
-  useEffect(() => { load(); }, [load]);
-
-  // Poll for processing interviews
+  // Load on mount and when page/filter changes
   useEffect(() => {
-    const hasProcessing = interviews.some((i) =>
-      ["queued", "transcribing", "analysing"].includes(i.status)
-    );
-    if (!hasProcessing) return;
-    const timer = setInterval(load, 5000);
-    return () => clearInterval(timer);
-  }, [interviews, load]);
+    load();
+  }, [load]);
+
+  // WebSocket — only surgically update status badge, never reload the list
+  useRealtime(
+    useCallback((event) => {
+      if (
+        event.type === "status_update" ||
+        event.type === "analysis_complete"
+      ) {
+        setInterviews((prev) =>
+          prev.map((i) =>
+            i._id === event.interview_id
+              ? { ...i, status: event.status ?? i.status }
+              : i,
+          ),
+        );
+      }
+    }, []),
+  );
 
   async function handleDelete(id: string) {
     try {
@@ -78,7 +81,11 @@ export default function InterviewsPage() {
       setInterviews((prev) => prev.filter((i) => i._id !== id));
       toast({ title: "Interview deleted" });
     } catch (e: any) {
-      toast({ title: "Delete failed", description: e.message, variant: "destructive" });
+      toast({
+        title: "Delete failed",
+        description: e.message,
+        variant: "destructive",
+      });
     }
   }
 
@@ -86,9 +93,16 @@ export default function InterviewsPage() {
     try {
       await api.interviews.transcribe(id);
       toast({ title: "Transcription started" });
-      load();
+      // Only update the status of that one card, don't reload the list
+      setInterviews((prev) =>
+        prev.map((i) => (i._id === id ? { ...i, status: "queued" } : i)),
+      );
     } catch (e: any) {
-      toast({ title: "Failed", description: e.message, variant: "destructive" });
+      toast({
+        title: "Failed",
+        description: e.message,
+        variant: "destructive",
+      });
     }
   }
 
@@ -106,10 +120,15 @@ export default function InterviewsPage() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Interviews</h2>
           <p className="text-muted-foreground text-sm mt-1">
-            {meta ? `${meta.total} interview${meta.total !== 1 ? "s" : ""}` : "All your interviews"}
+            {meta
+              ? `${meta.total} interview${meta.total !== 1 ? "s" : ""}`
+              : "All your interviews"}
           </p>
         </div>
-        <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2">
+        <Button
+          asChild
+          className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+        >
           <Link href="/dashboard/upload">
             <Upload className="w-4 h-4" strokeWidth={1.5} />
             Upload
@@ -120,7 +139,10 @@ export default function InterviewsPage() {
       {/* Filters */}
       <div className="flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+            strokeWidth={1.5}
+          />
           <Input
             placeholder="Search interviews…"
             className="pl-9 bg-white/5 border-white/10"
@@ -131,10 +153,16 @@ export default function InterviewsPage() {
         </div>
         <Select
           value={statusFilter}
-          onValueChange={(v: any) => { setStatusFilter(v); setPage(1); }}
+          onValueChange={(v: any) => {
+            setStatusFilter(v);
+            setPage(1);
+          }}
         >
           <SelectTrigger className="w-40 bg-white/5 border-white/10">
-            <Filter className="w-3.5 h-3.5 mr-2 text-muted-foreground" strokeWidth={1.5} />
+            <Filter
+              className="w-3.5 h-3.5 mr-2 text-muted-foreground"
+              strokeWidth={1.5}
+            />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -152,11 +180,16 @@ export default function InterviewsPage() {
       {/* List */}
       {loading ? (
         <div className="space-y-3">
-          {[...Array(4)].map((_, i) => <CardSkeleton key={i} />)}
+          {[...Array(4)].map((_, i) => (
+            <CardSkeleton key={i} />
+          ))}
         </div>
       ) : error ? (
         <div className="glass rounded-xl p-12 flex flex-col items-center text-center">
-          <AlertCircle className="w-8 h-8 text-muted-foreground mb-3" strokeWidth={1.5} />
+          <AlertCircle
+            className="w-8 h-8 text-muted-foreground mb-3"
+            strokeWidth={1.5}
+          />
           <p className="text-sm font-medium">Failed to load interviews</p>
           <p className="text-xs text-muted-foreground mt-1">{error}</p>
           <Button size="sm" variant="outline" className="mt-4" onClick={load}>
@@ -165,9 +198,14 @@ export default function InterviewsPage() {
         </div>
       ) : interviews.length === 0 ? (
         <div className="glass rounded-xl p-12 flex flex-col items-center text-center">
-          <FileAudio className="w-8 h-8 text-muted-foreground mb-3" strokeWidth={1.5} />
+          <FileAudio
+            className="w-8 h-8 text-muted-foreground mb-3"
+            strokeWidth={1.5}
+          />
           <p className="text-sm font-medium">
-            {search || statusFilter !== "all" ? "No interviews match your filters" : "No interviews yet"}
+            {search || statusFilter !== "all"
+              ? "No interviews match your filters"
+              : "No interviews yet"}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             {search || statusFilter !== "all"
@@ -175,7 +213,11 @@ export default function InterviewsPage() {
               : "Upload your first interview to get started"}
           </p>
           {!search && statusFilter === "all" && (
-            <Button asChild size="sm" className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white gap-2">
+            <Button
+              asChild
+              size="sm"
+              className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+            >
               <Link href="/dashboard/upload">
                 <Upload className="w-3.5 h-3.5" strokeWidth={1.5} />
                 Upload Interview
