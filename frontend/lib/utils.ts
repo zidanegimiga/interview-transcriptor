@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function formatFileSize(bytes: number) {
@@ -18,17 +18,33 @@ export function formatDuration(seconds: number | null) {
 }
 
 export const ACCEPTED = {
-  "audio/mpeg":  [".mp3"],
-  "audio/mp4":   [".m4a"],
-  "audio/wav":   [".wav"],
-  "audio/webm":  [".webm"],
-  "audio/ogg":   [".ogg"],
-  "video/mp4":   [".mp4"],
+  "audio/mpeg": [".mp3"],
+  "audio/mp4": [".m4a"],
+  "audio/wav": [".wav"],
+  "audio/webm": [".webm"],
+  "audio/ogg": [".ogg"],
+  "video/mp4": [".mp4"],
   "video/quicktime": [".mov"],
-  "video/webm":  [".webm"],
+  "video/webm": [".webm"],
 };
 
 export function formatSize(bytes: number) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function getSpeakerClass(speaker: string) {
+  const map: Record<string, string> = {
+    A: "speaker-a",
+    B: "speaker-b",
+    C: "speaker-c",
+  };
+  return map[speaker] ?? "text-foreground font-bold";
+}
+
+export function formatMs(ms: number) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
