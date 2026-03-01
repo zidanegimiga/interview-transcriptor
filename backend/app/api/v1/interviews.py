@@ -11,7 +11,7 @@ from app.models.interview import InterviewStatus, UpdateInterviewRequest
 from app.services.storage import get_storage_backend
 from app.services.transcription import get_transcription_service
 from app.services.analysis import run_analysis
-from app.main import limiter
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/interviews", tags=["Interviews"])
 
