@@ -16,4 +16,20 @@ interface Metrics {
   top_keywords: { term: string; count: number }[];
 }
 
-export type { Interview, Metrics };
+interface Template {
+  _id:         string;
+  name:        string;
+  description: string;
+  is_system:   boolean;
+}
+
+interface QueuedFile {
+  id:       string;
+  file:     File;
+  title:    string;
+  status:   "idle" | "uploading" | "success" | "error";
+  error?:   string;
+  resultId?: string;
+}
+
+export type { Interview, Metrics, Template, QueuedFile };
