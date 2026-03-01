@@ -1,147 +1,97 @@
-# HR Interview Transcription & Analysis Platform
+# HR Interview Platform
 
-An AI-powered platform for HR teams to upload, transcribe, and analyse interview recordings. Audio and video files are automatically transcribed using Deepgram, then analysed by GPT-4o-mini to extract summaries, sentiment, keywords, Q&A pairs, candidate strengths, and red flags — all delivered through a real-time web interface.
-
----
-
-## Table of Contents
-
-- [Project Overview](#project-overview)
-- [Setup Instructions](#setup-instructions)
-- [Environment Variables](#environment-variables)
-- [API Documentation](#api-documentation)
-- [AI Integration](#ai-integration)
-- [Technical Decisions](#technical-decisions)
-- [Known Limitations](#known-limitations)
+A web app for HR teams to upload interview recordings and get AI generated transcripts and analysis. You upload a file, Deepgram transcribes it, and GPT-4o-mini pulls out the key insights. Everything happens in the background and the UI updates in real time.
 
 ---
 
-## Project Overview
+## What it does
 
-HR teams spend significant time reviewing interview recordings. This platform automates the most tedious parts:
-
-- **Upload** audio or video interview recordings (MP3, MP4, WAV, M4A, MOV, WebM — up to 500MB)
-- **Transcribe** automatically using Deepgram Nova-2 with speaker diarisation
-- **Analyse** with GPT-4o-mini to produce structured insights in seconds
-- **Review** transcripts with speaker-labelled utterances and timestamps
-- **Export** to TXT, PDF, or DOCX for sharing or record-keeping
-- **Organise** with custom analysis templates per interview type (Technical, Behavioural, Sales, etc.)
-
-The frontend is built with Next.js 14 and the backend with FastAPI. Status updates are delivered in real time via WebSocket so users never need to refresh.
+- Upload audio or video interview recordings up to 500MB
+- Automatic transcription with speaker labels (Speaker A, Speaker B)
+- AI analysis that extracts a summary, sentiment score, keywords, Q&A pairs, candidate strengths and red flags
+- Export transcripts as TXT, PDF or DOCX
+- Custom analysis templates per interview type (Technical, Behavioural, Sales etc.)
+- Real time status updates so you never have to refresh
 
 ---
 
-## Setup Instructions
+## Tech Stack
 
-### Prerequisites
+**Frontend** Next.js 14, Tailwind CSS, shadcn/ui, NextAuth v5, Framer Motion
 
-| Tool | Minimum Version | Purpose |
-|------|----------------|---------|
-| Node.js | 18.x | Frontend |
-| Python | 3.11+ | Backend |
-| MongoDB | Atlas or 6.x local | Database |
-| ngrok (local dev) | Any | Deepgram webhook tunnel |
+**Backend** FastAPI, Motor (async MongoDB), Deepgram Nova 2, GPT-4o-mini
 
-You will also need accounts and API keys for:
+**Storage** Cloudflare R2
 
-- [Deepgram](https://console.deepgram.com) — speech-to-text
-- [OpenAI](https://platform.openai.com) — AI analysis
-- [Cloudflare R2](https://dash.cloudflare.com) — file storage (S3-compatible, free egress)
+**Database** MongoDB Atlas
+
+**Deployment** Vercel (frontend), Railway (backend)
 
 ---
 
-### 1. Clone the repository
+## Prerequisites
 
-```bash
-git clone https://github.com/your-username/interview-transcriptor.git
-cd interview-transcriptor
-```
+You need the following before getting started.
+
+- Node.js 18 or higher
+- Python 3.11 or higher
+- A MongoDB Atlas account
+- A Deepgram account and API key
+- An OpenAI account and API key
+- A Cloudflare R2 bucket
+- ngrok (for local Deepgram webhook testing)
 
 ---
 
-### 2. Backend setup
+## Running locally
+
+### Backend
 
 ```bash
 cd backend
-
-# Create and activate virtual environment
 python -m venv .venv
-source .venv/bin/activate        # macOS/Linux
-# .venv\Scripts\activate         # Windows
-
-# Install dependencies
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# Copy environment file
 cp .env.example .env
-# Edit .env with your values (see Environment Variables section)
-```
-
-**Run the backend:**
-
-```bash
+# fill in your .env values
 uvicorn app.main:app --reload --port 8000
 ```
 
-The API will be available at `http://localhost:8000`. Interactive docs at `http://localhost:8000/docs`.
+API docs available at `http://localhost:8000/api/docs`
 
-**Seed system templates:**
+Seed the system templates once:
 
 ```bash
 python scripts/seed_templates.py
 ```
 
-**Run tests:**
+Run the test suite:
 
 ```bash
 pytest tests/ -v
 ```
 
----
-
-### 3. Frontend setup
+### Frontend
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Copy environment file
 cp .env.example .env.local
-# Edit .env.local with your values (see Environment Variables section)
-
-# Run dev server
+# fill in your .env.local values
 npm run dev
 ```
 
-The app will be available at `http://localhost:3000`.
+App runs at `http://localhost:3000`
 
----
+### Webhook tunnel
 
-### 4. Deepgram webhook tunnel (local development only)
-
-Deepgram needs a publicly accessible URL to POST transcription results back to your local server. Use ngrok:
+Deepgram needs a public URL to send transcription results back to your local machine. Start ngrok and point it at port 8000:
 
 ```bash
-brew install ngrok           # macOS
 ngrok http 8000
 ```
 
-Copy the HTTPS URL (e.g. `https://abc123.ngrok-free.app`) and set it as `BACKEND_URL` in your backend `.env`. Restart the backend after updating.
-
-> **Note:** The ngrok free tier generates a new URL on every restart. Update `BACKEND_URL` each time.
-
----
-
-### 5. MongoDB indexes
-
-After your first run, create indexes for query performance:
-
-```bash
-cd backend
-python scripts/create_indexes.py
-```
+Copy the HTTPS URL and set it as `BACKEND_URL` in your backend `.env`. Restart the backend after changing it.
 
 ---
 
@@ -150,43 +100,30 @@ python scripts/create_indexes.py
 ### Backend (`backend/.env`)
 
 ```dotenv
-# Application
-ENVIRONMENT=development              # development | production
+ENVIRONMENT=development
 
-# Database
 MONGODB_URL=mongodb+srv://user:pass@cluster.mongodb.net/
 MONGODB_DB_NAME=hrinterview
 
-# Storage — Cloudflare R2 (S3-compatible)
-STORAGE_BACKEND=s3                   # s3 | mock
+STORAGE_BACKEND=s3
 S3_ENDPOINT_URL=https://<account>.r2.cloudflarestorage.com
 S3_ACCESS_KEY=your_r2_access_key
 S3_SECRET_KEY=your_r2_secret_key
 S3_BUCKET_NAME=hr-interview-uploads
 
-# Transcription
-TRANSCRIPTION_BACKEND=deepgram       # deepgram | mock
+TRANSCRIPTION_BACKEND=deepgram
 DEEPGRAM_API_KEY=your_deepgram_key
 DEEPGRAM_WEBHOOK_SECRET=your_webhook_secret
 
-# AI Analysis
 OPENAI_API_KEY=your_openai_key
 OPENAI_MODEL=gpt-4o-mini
-ANALYSIS_BACKEND=openai              # openai | mock
+ANALYSIS_BACKEND=openai
 
-# Authentication — must match NEXTAUTH_SECRET on the frontend
 AUTH_SECRET=your_shared_secret
 
-# URLs
-BACKEND_URL=https://your-ngrok-or-railway-url.app
+BACKEND_URL=https://your-ngrok-url.ngrok-free.app
 FRONTEND_URL=http://localhost:3000
 
-# Email (optional)
-EMAIL_PROVIDER=resend
-RESEND_API_KEY=your_resend_key
-EMAIL_FROM=noreply@yourdomain.com
-
-# Limits
 MAX_FILE_SIZE_MB=500
 MAX_BATCH_FILES=10
 ```
@@ -194,227 +131,115 @@ MAX_BATCH_FILES=10
 ### Frontend (`frontend/.env.local`)
 
 ```dotenv
-# NextAuth
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_shared_secret   # must match AUTH_SECRET above
+NEXTAUTH_SECRET=your_shared_secret
 
-# Google OAuth
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 
-# API
 NEXT_PUBLIC_API_URL=http://localhost:8000
 
-# Database (NextAuth session adapter)
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/
 MONGODB_DB_NAME=hrinterview
 ```
 
-> `AUTH_SECRET` and `NEXTAUTH_SECRET` **must be the same value**. The backend signs JWTs with this secret; the frontend generates them and sends them with every API request.
+`AUTH_SECRET` and `NEXTAUTH_SECRET` must be the same value. The backend uses it to validate tokens the frontend generates.
 
 ---
 
-## API Documentation
+## API Endpoints
 
-All endpoints are prefixed with `/api/v1`. Authentication is required on all endpoints except `/api/v1/health`. Pass a Bearer token in the `Authorization` header.
-
-### Health
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/health` | Health check — returns `{"status": "ok"}` |
-
----
+All endpoints sit under `/api/v1` and require a Bearer token except for `/health`.
 
 ### Interviews
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/v1/interviews/upload` | Upload a single interview file |
-| POST | `/api/v1/interviews/batch-upload` | Upload up to 10 files at once |
-| GET | `/api/v1/interviews` | List interviews with pagination, status filter, and text search |
-| GET | `/api/v1/interviews/metrics` | Aggregate counts by status, sentiment, and top keywords |
-| GET | `/api/v1/interviews/{id}` | Fetch full interview with transcript and analysis |
-| PATCH | `/api/v1/interviews/{id}` | Update title or tags |
-| DELETE | `/api/v1/interviews/{id}` | Delete interview and remove file from storage |
-| GET | `/api/v1/interviews/{id}/status` | Lightweight status poll |
-| POST | `/api/v1/interviews/{id}/transcribe` | Submit file to Deepgram for transcription |
-| POST | `/api/v1/interviews/{id}/analyse` | Trigger GPT-4o-mini analysis (requires transcript) |
-| GET | `/api/v1/interviews/{id}/export` | Export transcript as `?format=txt\|pdf\|docx` |
-
-**Upload request** (`multipart/form-data`):
-
-```
-file        required   Audio or video file
-title       optional   Display name (defaults to filename)
-template_id optional   MongoDB ObjectId of an analysis template
-```
-
-**List query parameters:**
-
-```
-page              integer   Page number (default: 1)
-limit             integer   Results per page (default: 20, max: 100)
-interview_status  string    Filter by status: uploaded|queued|transcribing|analysing|completed|failed
-search            string    Full-text search across title and transcript
-```
-
-**Interview status lifecycle:**
-
-```
-uploaded → queued → transcribing → analysing → completed
-                                              ↘ failed
-```
-
----
+| POST | `/interviews/upload` | Upload a single file |
+| POST | `/interviews/batch-upload` | Upload up to 10 files |
+| GET | `/interviews` | List interviews with pagination and filters |
+| GET | `/interviews/metrics` | Status counts, sentiment breakdown, top keywords |
+| GET | `/interviews/{id}` | Full interview with transcript and analysis |
+| PATCH | `/interviews/{id}` | Update title or tags |
+| DELETE | `/interviews/{id}` | Delete interview |
+| POST | `/interviews/{id}/transcribe` | Submit to Deepgram |
+| POST | `/interviews/{id}/analyse` | Run GPT analysis |
+| GET | `/interviews/{id}/export?format=txt` | Export as txt, pdf or docx |
 
 ### Templates
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/v1/templates` | List system templates and user's own templates |
-| POST | `/api/v1/templates` | Create a custom template |
-| PUT | `/api/v1/templates/{id}` | Update a custom template (cannot edit system templates) |
-| DELETE | `/api/v1/templates/{id}` | Delete a custom template |
+| GET | `/templates` | List all templates |
+| POST | `/templates` | Create a custom template |
+| PUT | `/templates/{id}` | Update a custom template |
+| DELETE | `/templates/{id}` | Delete a custom template |
 
-**Template body** (`application/json`):
-
-```json
-{
-  "name": "Senior Engineer Interview",
-  "description": "Focus on system design and technical depth",
-  "prompt": "Pay special attention to how the candidate approaches ambiguous problems...",
-  "focus_areas": ["system design", "problem solving", "communication"]
-}
-```
-
----
-
-### Webhooks
+### Other
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/v1/webhooks/deepgram` | Deepgram transcription callback (internal — not called by frontend) |
+| GET | `/health` | Health check |
+| POST | `/webhooks/deepgram` | Deepgram callback (internal) |
+| WS | `/ws/{user_id}?token=` | Real time status updates |
 
-Deepgram POSTs to this endpoint when transcription completes. The endpoint validates the HMAC signature, saves the transcript, and triggers AI analysis as a background task. The `interview_id` is embedded in the callback URL as a query parameter.
-
----
-
-### WebSocket
+### Interview status flow
 
 ```
-WS /api/v1/ws/{user_id}?token=<jwt>
+uploaded -> queued -> transcribing -> analysing -> completed
+                                               -> failed
 ```
 
-Authenticate with the same JWT used for REST requests. The server pushes two event types:
+---
 
-```json
-{ "type": "status_update", "interview_id": "...", "status": "analysing", "updated_at": "..." }
-{ "type": "analysis_complete", "interview_id": "...", "status": "completed", "sentiment_overall": "positive", "updated_at": "..." }
-```
+## AI Services
 
-The client reconnects automatically with exponential backoff (max 30s) on disconnect.
+### Deepgram Nova 2
+
+Used for transcription. It was chosen because it has the best accuracy for conversational audio and speaker diarisation is included at no extra cost. The webhook callback model fits well with the async architecture. Deepgram processes the file and notifies the backend when done rather than the backend polling for status.
+
+Features used: `diarize`, `utterances`, `smart_format`, `punctuate`
+
+### GPT-4o-mini
+
+Used for analysis. All features (summary, sentiment, keywords, Q&A, strengths, red flags) are extracted in a single API call using a structured JSON prompt. This keeps latency low and cost predictable. GPT-4o-mini was chosen over GPT-4o because the quality difference for structured extraction tasks is minimal and the cost difference is significant.
+
+A `ANALYSIS_BACKEND=mock` mode is available for development without needing OpenAI credits.
 
 ---
 
-## AI Integration
+## Architecture Notes
 
-### Transcription — Deepgram Nova-2
+**Shared JWT secret**
+NextAuth manages sessions on the frontend. On sign in, a backend compatible JWT is generated using the same `AUTH_SECRET` and stored in the session. The frontend sends this token with every API request. The backend validates it without any database lookup so the backend stays fully stateless.
 
-**Why Deepgram:** Deepgram was chosen over AWS Transcribe and AssemblyAI for three reasons. First, Nova-2 has the best accuracy-per-dollar ratio for conversational audio at $0.0043/minute. Second, speaker diarisation, utterance splitting, per-utterance sentiment, and smart formatting are all included in a single API call with no additional cost. Third, the webhook callback model fits the async architecture cleanly — Deepgram processes the file and notifies the backend when done, rather than requiring long-polling.
+**Cloudflare R2 for storage**
+R2 is S3 compatible with zero egress fees. Audio files can be large and are accessed frequently during transcription. The storage layer is abstracted behind a protocol so swapping to S3 or local disk is a one line config change.
 
-**Features used:**
-- `model=nova-2` — latest general-purpose model
-- `diarize=true` — speaker separation (Speaker A, Speaker B, etc.)
-- `utterances=true` — sentence-level segments with timestamps
-- `smart_format=true` — punctuation, capitalisation, number formatting
-- `punctuate=true` — sentence boundaries
+**Webhook over polling**
+When a transcription job is submitted, Deepgram gets a callback URL. It POSTs the result back when done. The backend does not waste requests checking status and the user sees the update within seconds of processing finishing.
 
----
-
-### Analysis — GPT-4o-mini
-
-**Why GPT-4o-mini:** The analysis requirement calls for structured extraction — summaries, sentiment scoring, keyword categorisation, Q&A pair detection, and candidate assessment. This needs language understanding that rule-based systems cannot provide. GPT-4o-mini was chosen over GPT-4o because it is 15× cheaper while producing indistinguishable quality for structured extraction tasks. All four analysis features are extracted in a **single API call** using a structured JSON prompt, which keeps latency low and cost predictable.
-
-**What is extracted per interview:**
-
-| Feature | Description |
-|---------|-------------|
-| Summary | 2–4 paragraph overview of the full conversation |
-| Candidate assessment | HR-focused evaluation paragraph |
-| Sentiment | Overall score (−1.0 to 1.0), per-speaker breakdown |
-| Keywords | Term, category (skill/technology/competency/tool/soft_skill), frequency |
-| Q&A pairs | Every question and answer with speaker attribution |
-| Strengths | Candidate positives from an HR perspective |
-| Red flags | Concerns or gaps worth following up |
-
-**Prompt design:** Temperature is set to 0.2 for deterministic, structured output. The response format is forced to `json_object`. Transcripts over 80,000 characters are truncated (keeping the first 60% and last 40%) to stay within the context window while preserving the interview's opening and closing.
-
-**Mock backend:** An `ANALYSIS_BACKEND=mock` mode is available for development and testing. It returns realistic fixture data instantly with no API call, enabling full UI development without OpenAI credits.
-
----
-
-## Technical Decisions
-
-### Monorepo structure with separate deployments
-
-The project uses a single Git repository with `backend/` and `frontend/` subdirectories deployed independently — backend to Railway, frontend to Vercel. This keeps code co-located for easier development while allowing each service to scale and deploy on its optimal platform.
-
-### JWT authentication shared between frontend and backend
-
-NextAuth manages the user session on the frontend. On every sign-in, a backend-compatible JWT is generated (using the same `AUTH_SECRET`) and stored in the NextAuth session. The frontend includes this token in every API request. This avoids a separate auth service while keeping the backend stateless and independently testable.
-
-**Tradeoff:** Token revocation is not instant — a signed JWT remains valid until expiry (7 days). For a production HR system handling sensitive data, a token blocklist or shorter expiry with refresh tokens would be preferable.
-
-### Cloudflare R2 for file storage
-
-R2 is S3-compatible with zero egress fees. Audio files can be large (500MB limit) and are accessed frequently during transcription. R2's free egress tier makes it substantially cheaper than AWS S3 for this use case. The storage layer is abstracted behind a `StorageBackend` protocol, making it trivial to swap to S3 or local disk.
-
-### Deepgram webhook callback model
-
-Rather than polling Deepgram for transcription status, the backend registers a webhook URL when submitting a job. Deepgram POSTs the completed transcript back, which triggers analysis as a background task. This keeps the backend request-response cycle fast and avoids wasted polling requests. The `interview_id` is embedded as a query parameter in the callback URL since Deepgram does not support custom metadata in webhook payloads.
-
-### WebSocket for real-time status updates
-
-The frontend opens a persistent WebSocket connection on login. The backend's `ConnectionManager` tracks active connections per user. When transcription or analysis completes, the backend pushes a status event to the relevant user's connection. The frontend surgically updates only the affected interview's status badge rather than reloading the list — preventing disruptive UI jumps.
-
-### Single GPT call for all four analysis features
-
-A naive implementation would make four separate OpenAI calls (one per feature). Instead, all features are extracted in a single structured JSON prompt. This reduces latency from ~8–12 seconds to ~2–4 seconds, cuts API costs by 75%, and avoids partial failures where some features succeed and others time out.
-
-### FastAPI with async MongoDB (Motor)
-
-All database operations use Motor (async MongoDB driver) so that I/O-bound operations — file uploads, database queries, external API calls — do not block the event loop. This allows a single-process backend to handle concurrent transcription webhooks and WebSocket connections efficiently.
+**Single GPT call for all analysis**
+A naive approach would make four separate OpenAI calls. Instead everything is extracted in one structured JSON prompt. This cuts latency by about 75% and eliminates partial failure scenarios.
 
 ---
 
 ## Known Limitations
 
-### What would be improved with more time
+**No speaker naming**
+Diarisation produces Speaker A and Speaker B. There is no way yet to assign real names to speakers. This is a quick win that would make transcripts significantly more readable.
 
-**OpenAI key**
-The current implementation uses a mock analysis backend for development and testing. A real OpenAI API key would be needed for production analysis. The `ANALYSIS_BACKEND=mock` mode is available for development and testing.
+**In memory rate limiting**
+The current rate limiter resets on every deploy and does not work across multiple instances. A Redis backed limiter would be needed for proper production use.
 
-**Token revocation and session security**
-The current JWT implementation has no revocation mechanism. A Redis-backed blocklist or shorter-lived tokens with refresh token rotation would be needed before handling genuinely sensitive HR data.
+**No audio playback**
+There is no audio player on the transcript page. Clicking a timestamp to jump to that moment in the recording would improve the review experience considerably.
 
-**File processing queue**
-Currently, transcription is triggered immediately on upload and analysis runs inline as a FastAPI background task. Under load, this could exhaust database connections or OpenAI rate limits. A proper job queue (Celery with Redis, or Railway's built-in cron) would give better control over concurrency, retries, and backpressure.
+**File not deleted from R2 on interview delete**
+Deleting an interview removes the MongoDB record but leaves the file in storage. This needs a follow up storage cleanup call.
 
-**No audio player**
-The transcript viewer shows speaker-labelled text with timestamps but there is no audio waveform or playback. Clicking a timestamp to jump to that moment in the recording would significantly improve the review experience.
+**No frontend tests**
+The backend has 44 passing tests. The frontend has none. Playwright end to end tests for the core flows would be the next thing to add.
 
-**Search is limited to MongoDB text index**
-The current full-text search uses MongoDB's built-in text index which tokenises words but does not understand semantic similarity. Searching for "communication skills" would not surface interviews mentioning "interpersonal ability." A vector search index (MongoDB Atlas Vector Search or Pinecone) would enable semantic search across transcripts.
-
-**No multi-tenancy or organisation support**
-All interviews are scoped to individual users. HR teams typically need shared access — a manager reviewing interviews conducted by different team members. Adding an `organisation_id` layer with role-based access control (admin, reviewer, read-only) is the most impactful missing feature for real-world use.
-
-**Export quality**
-The PDF export uses reportlab with basic styling. A more polished output — with the company logo, structured sections for Q&A and keywords, and sentiment visualisation — would make exports share-ready without further editing.
-
-**Deepgram speaker labels are not named**
-Diarisation produces "Speaker A" and "Speaker B" labels. There is no mechanism for the user to assign names (e.g. "Interviewer" and "Candidate"). This is a quick win that would significantly improve readability of both the transcript viewer and exported documents.
-
-**No automated testing for the frontend**
-The backend has 44 passing integration and unit tests. The frontend has none. Adding Playwright end-to-end tests for the critical paths (upload → transcribe → analyse → export) would catch regressions before deployment.
+**No organisation support**
+Everything is scoped to individual users. Real HR teams need shared access with role based permissions across team members.
