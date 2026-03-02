@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { AnimatePresence } from "framer-motion";
 import { FileAudio, Search, Filter, AlertCircle, Upload } from "lucide-react";
@@ -28,10 +28,27 @@ export default function InterviewsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Stable load function — only called explicitly, never by a timer
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    setSearch(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setPage(1);
+    }, 400);
+  }
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -40,7 +57,7 @@ export default function InterviewsPage() {
       params.set("page", String(page));
       params.set("limit", "12");
       if (statusFilter !== "all") params.set("interview_status", statusFilter);
-      if (search) params.set("search", search);
+      if (debouncedSearch) params.set("search", debouncedSearch);
 
       const res: any = await api.interviews.list(`?${params.toString()}`);
       setInterviews(res.data ?? []);
@@ -50,14 +67,12 @@ export default function InterviewsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, search]);
+  }, [page, statusFilter, debouncedSearch]);
 
-  // Load on mount and when page/filter changes
   useEffect(() => {
     load();
   }, [load]);
 
-  // WebSocket — only surgically update status badge, never reload the list
   useRealtime(
     useCallback((event) => {
       if (
@@ -93,7 +108,6 @@ export default function InterviewsPage() {
     try {
       await api.interviews.transcribe(id);
       toast({ title: "Transcription started" });
-      // Only update the status of that one card, don't reload the list
       setInterviews((prev) =>
         prev.map((i) => (i._id === id ? { ...i, status: "queued" } : i)),
       );
@@ -103,13 +117,6 @@ export default function InterviewsPage() {
         description: e.message,
         variant: "destructive",
       });
-    }
-  }
-
-  function handleSearchKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") {
-      setPage(1);
-      load();
     }
   }
 
@@ -147,8 +154,7 @@ export default function InterviewsPage() {
             placeholder="Search interviews…"
             className="pl-9 bg-white/5 border-white/10"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
+            onChange={handleSearchChange}
           />
         </div>
         <Select
