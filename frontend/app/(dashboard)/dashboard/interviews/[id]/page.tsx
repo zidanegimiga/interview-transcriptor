@@ -310,7 +310,11 @@ export default function InterviewDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left — tabs */}
           <div className="lg:col-span-2 space-y-4">
-            <AudioPlayer interviewId={interview._id} seekTo={seekTo} />
+            <AudioPlayer
+              interviewId={interview._id}
+              fileType={interview.file_type}
+              seekTo={seekTo}
+            />
             <Tabs
               defaultValue={interview.transcript ? "transcript" : "summary"}
             >
@@ -357,7 +361,10 @@ export default function InterviewDetailPage() {
                       %
                     </p>
                   </div>
-                  <TranscriptView transcript={interview.transcript!} onSeek={(seconds) => setSeekTo(seconds)} />
+                  <TranscriptView
+                    transcript={interview.transcript!}
+                    onSeek={(seconds) => setSeekTo(seconds)}
+                  />
                 </div>
               </TabsContent>
 
