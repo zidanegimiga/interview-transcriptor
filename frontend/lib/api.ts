@@ -38,8 +38,9 @@ export const api = {
       request<any>(`/interviews/${id}/analyse`, { method: "POST" }),
     status:     (id: string) => request<any>(`/interviews/${id}/status`),
     metrics:    ()            => request<any>(`/interviews/metrics`),
+    audioUrl:   (id: string) => request<any>(`/interviews/${id}/audio-url`),
     exportUrl:  (id: string, format: string) =>
-      `${BASE}/api/v1/interviews/${id}/export?format=${format}`,
+      `${BASE}/api/v1/interviews/${id}/export?format=${format}`
   },
   templates: {
     list:   ()                => request<any>(`/templates`),

@@ -3,9 +3,13 @@ import { Transcript } from "@/shared/types/dashboard";
 import { motion } from "framer-motion";
 import { useState } from "react";
 
+interface TranscriptViewProps {
+  transcript: Transcript;
+  onSeek?: (seconds: number) => void;
+}
 
 
-export default function TranscriptView({ transcript }: { transcript: Transcript }) {
+export default function TranscriptView({ transcript, onSeek }: TranscriptViewProps) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
   if (!transcript.utterances?.length) {
@@ -49,7 +53,15 @@ export default function TranscriptView({ transcript }: { transcript: Transcript 
             </p>
 
             <div className="flex items-center gap-3 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="timestamp">{formatMs(u.start_ms)}</span>
+              <span
+  className={cn(
+    "timestamp",
+    onSeek && "cursor-pointer hover:text-emerald-500 transition-colors"
+  )}
+  onClick={() => onSeek?.(u.start_ms / 1000)}
+>
+  {formatMs(u.start_ms)}
+</span>
               {u.sentiment && (
                 <span className="text-xs text-muted-foreground capitalize">
                   {u.sentiment}

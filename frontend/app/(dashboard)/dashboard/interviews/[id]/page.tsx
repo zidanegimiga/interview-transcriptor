@@ -36,11 +36,13 @@ import { ProcessingOverlay } from "@/components/interviews/ProcessingOverlay";
 import TranscriptView from "@/components/interviews/TranscriptView";
 import QAAccordion from "@/components/interviews/QAAccordion";
 import { getSession } from "next-auth/react";
+import { AudioPlayer } from "@/components/interviews/AudioPlayer";
 
 export default function InterviewDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { toast } = useToast();
+  const [seekTo, setSeekTo] = useState<number | null>(null);
 
   const [interview, setInterview] = useState<Interview | null>(null);
   const [loading, setLoading] = useState(true);
@@ -307,7 +309,6 @@ export default function InterviewDetailPage() {
       {(interview.transcript || interview.ai_analysis) && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left — tabs */}
-          <div className="lg:col-span-2 space-y-4">
           <div className="lg:col-span-2">
             <Tabs
               defaultValue={interview.transcript ? "transcript" : "summary"}
@@ -430,7 +431,6 @@ export default function InterviewDetailPage() {
               </div>
             )}
           </div>
-        </div>
         </div>
       )}
     </div>
