@@ -3,9 +3,13 @@ import { Transcript } from "@/shared/types/dashboard";
 import { motion } from "framer-motion";
 import { useState } from "react";
 
-
-
-export default function TranscriptView({ transcript }: { transcript: Transcript }) {
+export default function TranscriptView({
+  transcript,
+  onSeek,
+}: {
+  transcript: Transcript;
+  onSeek?: (seconds: number) => void;
+}) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
   if (!transcript.utterances?.length) {
@@ -28,28 +32,41 @@ export default function TranscriptView({ transcript }: { transcript: Transcript 
           transition={{ delay: i * 0.02 }}
           className={cn(
             "flex gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors group",
-            activeIdx === i ? "bg-accent" : "hover:bg-accent/50"
+            activeIdx === i ? "bg-accent" : "hover:bg-accent/50",
           )}
           onClick={() => setActiveIdx(activeIdx === i ? null : i)}
         >
           {/* Speaker label */}
           <div className="flex-shrink-0 w-20 pt-0.5">
-            <span className={cn("text-xs font-bold", getSpeakerClass(u.speaker))}>
+            <span
+              className={cn("text-xs font-bold", getSpeakerClass(u.speaker))}
+            >
               Speaker {u.speaker}
             </span>
           </div>
 
           {/* Text */}
           <div className="flex-1 min-w-0">
-            <p className={cn(
-              "text-sm leading-relaxed transition-colors",
-              activeIdx === i ? "utterance-active" : "utterance-inactive"
-            )}>
+            <p
+              className={cn(
+                "text-sm leading-relaxed transition-colors",
+                activeIdx === i ? "utterance-active" : "utterance-inactive",
+              )}
+            >
               {u.text}
             </p>
 
             <div className="flex items-center gap-3 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="timestamp">{formatMs(u.start_ms)}</span>
+              <span
+                className={cn(
+                  "timestamp",
+                  onSeek &&
+                    "cursor-pointer hover:text-emerald-500 transition-colors",
+                )}
+                onClick={() => onSeek?.(u.start_ms / 1000)}
+              >
+                {formatMs(u.start_ms)}
+              </span>
               {u.sentiment && (
                 <span className="text-xs text-muted-foreground capitalize">
                   {u.sentiment}
