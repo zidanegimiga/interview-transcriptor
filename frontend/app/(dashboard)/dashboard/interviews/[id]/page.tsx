@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-// import { AudioPlayer } from "@/components/interviews/AudioPlayer";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -39,7 +38,6 @@ import QAAccordion from "@/components/interviews/QAAccordion";
 import { getSession } from "next-auth/react";
 
 export default function InterviewDetailPage() {
-  const [seekTo, setSeekTo] = useState<number | null>(null);
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { toast } = useToast();
@@ -315,6 +313,7 @@ export default function InterviewDetailPage() {
               fileType={interview.file_type}
               seekTo={seekTo}
             /> */}
+          <div className="lg:col-span-2">
             <Tabs
               defaultValue={interview.transcript ? "transcript" : "summary"}
             >
@@ -361,10 +360,7 @@ export default function InterviewDetailPage() {
                       %
                     </p>
                   </div>
-                  <TranscriptView
-                    transcript={interview.transcript!}
-                    onSeek={(seconds) => setSeekTo(seconds)}
-                  />
+                  <TranscriptView transcript={interview.transcript!} />
                 </div>
               </TabsContent>
 
