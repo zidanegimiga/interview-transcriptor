@@ -37,6 +37,7 @@ import { ProcessingOverlay } from "@/components/interviews/ProcessingOverlay";
 import TranscriptView from "@/components/interviews/TranscriptView";
 import QAAccordion from "@/components/interviews/QAAccordion";
 import { getSession } from "next-auth/react";
+import { AudioPlayer } from "@/components/interviews/AudioPlayer";
 
 export default function InterviewDetailPage() {
   const [seekTo, setSeekTo] = useState<number | null>(null);
@@ -310,11 +311,11 @@ export default function InterviewDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left — tabs */}
           <div className="lg:col-span-2 space-y-4">
-            {/* <AudioPlayer
+            <AudioPlayer
               interviewId={interview._id}
               fileType={interview.file_type}
               seekTo={seekTo}
-            /> */}
+            />
             <Tabs
               defaultValue={interview.transcript ? "transcript" : "summary"}
             >
