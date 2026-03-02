@@ -3,7 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
-import { Moon, Sun, LogOut, User, ChevronDown } from "lucide-react";
+import { Moon, Sun, LogOut, User, ChevronDown, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,7 +28,11 @@ function getTitle(pathname: string): string {
   return "HR Platform";
 }
 
-export function Header() {
+interface HeaderProps {
+  onMenuClick: () => void;
+}
+
+export function Header({ onMenuClick }: HeaderProps) {
   const { data: session }   = useSession();
   const { theme, setTheme } = useTheme();
   const pathname            = usePathname();
@@ -36,12 +40,24 @@ export function Header() {
 
   const user     = session?.user;
   const initials = user?.name
-    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
 
   return (
-    <header className="h-14 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-6 sticky top-0 z-10">
-      <h1 className="text-sm font-semibold">{title}</h1>
+    <header className="h-14 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-4 md:px-6 sticky top-0 z-10">
+      <div className="flex items-center gap-3">
+        {/* Hamburger — mobile only */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="w-8 h-8 md:hidden text-muted-foreground hover:text-foreground"
+          onClick={onMenuClick}
+        >
+          <Menu className="w-5 h-5" strokeWidth={1.5} />
+        </Button>
+
+        <h1 className="text-sm font-semibold">{title}</h1>
+      </div>
 
       <div className="flex items-center gap-2">
         {/* Theme toggle */}
