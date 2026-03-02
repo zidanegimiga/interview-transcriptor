@@ -309,7 +309,12 @@ export default function InterviewDetailPage() {
       {(interview.transcript || interview.ai_analysis) && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left — tabs */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-4">
+            <AudioPlayer
+              interviewId={interview._id}
+              fileType={interview.file_type}
+              seekTo={seekTo}
+            />
             <Tabs
               defaultValue={interview.transcript ? "transcript" : "summary"}
             >
