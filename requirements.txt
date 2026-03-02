@@ -42,3 +42,4 @@ pytest-asyncio==0.23.7
 pytest-mock==3.14.0
 pytest-cov==5.0.0
 mongomock-motor==0.0.21
+slowapi==0.1.9
