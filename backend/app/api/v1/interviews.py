@@ -155,6 +155,27 @@ async def get_interview(request: Request, interview_id: str, user: CurrentUser, 
     return ok(_serialize(doc))
 
 
+@router.get("/{interview_id}/audio-url")
+@limiter.limit("30/minute")
+async def get_audio_url(request: Request, interview_id: str, user: CurrentUser, db: DBDep):
+    try:
+        oid = ObjectId(interview_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid interview ID.")
+
+    doc = await db["interviews"].find_one(
+        {"_id": oid, "user_id": user["id"]},
+        {"storage_key": 1, "file_type": 1},
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Interview not found.")
+
+    storage = get_storage_backend()
+    url = await storage.presigned_url(doc["storage_key"], expires_in=3600)
+
+    return ok({"url": url, "expires_in": 3600})
+
+
 @router.patch("/{interview_id}")
 @limiter.limit("30/minute")
 async def update_interview(
