@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { AudioPlayer } from "@/components/interviews/AudioPlayer";
+// import { AudioPlayer } from "@/components/interviews/AudioPlayer";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -310,11 +310,11 @@ export default function InterviewDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left — tabs */}
           <div className="lg:col-span-2 space-y-4">
-            <AudioPlayer
+            {/* <AudioPlayer
               interviewId={interview._id}
               fileType={interview.file_type}
               seekTo={seekTo}
-            />
+            /> */}
             <Tabs
               defaultValue={interview.transcript ? "transcript" : "summary"}
             >
