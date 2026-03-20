@@ -37,11 +37,14 @@ class Settings(BaseSettings):
     S3_SECRET_KEY: str = ""
     S3_BUCKET_NAME: str = ""
     S3_REGION: str = "auto"
-    ANALYSIS_BACKEND: str = "openai"  # openai | mock
+    ANALYSIS_BACKEND: str = "openai"  # openai | mock | gemini
 
     DEEPGRAM_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
+
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-1.5-flash" 
 
     TRANSCRIPTION_BACKEND: Literal["deepgram", "mock"] = "deepgram"
     DEEPGRAM_WEBHOOK_SECRET: str = ""

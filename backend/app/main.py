@@ -32,7 +32,7 @@ def create_app() -> FastAPI:
     is_dev = settings.ENVIRONMENT != "production"
 
     app = FastAPI(
-        title="HR Interview Analysis Platform",
+        title="Audio Analysis Platform",
         version="1.0.0",
         docs_url="/api/docs" if is_dev else None,
         redoc_url="/api/redoc" if is_dev else None,

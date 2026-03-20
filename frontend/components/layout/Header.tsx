@@ -25,7 +25,7 @@ const TITLES: Record<string, string> = {
 function getTitle(pathname: string): string {
   if (TITLES[pathname]) return TITLES[pathname];
   if (pathname.startsWith("/dashboard/interviews/")) return "Interview Detail";
-  return "HR Platform";
+  return "Audio Sentiment Analysis Platform";
 }
 
 interface HeaderProps {

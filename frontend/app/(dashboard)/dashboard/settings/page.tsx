@@ -230,7 +230,7 @@ export default function SettingsPage() {
           <div className="flex justify-between">
             <span>Platform</span>
             <span className="text-foreground font-medium">
-              HR Interview Platform
+              Audio Sentiment Analysis Platform
             </span>
           </div>
           <div className="flex justify-between">

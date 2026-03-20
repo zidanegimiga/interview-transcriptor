@@ -12,10 +12,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | HR Interview Platform",
-    default:  "HR Interview Platform",
+    template: "%s | Audio Sentiment Analysis Platform",
+    default:  "Audio Sentiment Analysis Platform",
   },
-  description: "AI-powered interview transcription and analysis",
+  description: "AI-powered transcription and analysis",
 };
 
 export default function RootLayout({

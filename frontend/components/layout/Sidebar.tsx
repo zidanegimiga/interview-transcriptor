@@ -38,8 +38,8 @@ function NavContent({ onClose }: { onClose?: () => void }) {
           <Sparkles className="w-4 h-4 text-emerald-500" strokeWidth={1.5} />
         </div>
         <div>
-          <p className="text-sm font-semibold leading-none">HR Platform</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Interview Analysis</p>
+          <p className="text-sm font-semibold leading-none">Sentiment Analysis Platform</p>
+          <p className="text-[11px] text-muted-foreground mt-2">Interview Analysis</p>
         </div>
         {/* Close button — mobile only */}
         {onClose && (

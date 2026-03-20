@@ -12,7 +12,7 @@ from app.services.notification import manager
 
 logger = logging.getLogger(__name__)
 
-# GPT Prompt
+# GPT / Gemini Prompt
 
 SYSTEM_PROMPT = """You are an expert HR analyst. You will be given an interview transcript with speaker labels (Speaker A, Speaker B etc).
 Analyse it thoroughly and return ONLY a valid JSON object matching the schema below.
@@ -168,6 +168,51 @@ async def _run_openai_analysis(transcript_text: str, template_prompt: str | None
     return parsed, response.usage.prompt_tokens, response.usage.completion_tokens
 
 
+# Gemini analysis
+async def _run_gemini_analysis(transcript_text: str, template_prompt: str | None) -> tuple[dict, int, int]:
+    """
+    Returns (parsed_result, prompt_tokens, completion_tokens).
+    Uses google-generativeai with JSON mode enforced via response_mime_type.
+    Install: pip install google-generativeai
+    Config:  GEMINI_API_KEY and GEMINI_MODEL (e.g. "gemini-1.5-flash") in settings.
+    """
+    try:
+        import google.generativeai as genai
+    except ImportError as exc:
+        raise RuntimeError(
+            "google-generativeai is not installed. Run: pip install google-generativeai"
+        ) from exc
+
+    genai.configure(api_key=settings.GEMINI_API_KEY)
+
+    model = genai.GenerativeModel(
+        model_name=settings.GEMINI_MODEL,
+        system_instruction=SYSTEM_PROMPT,
+        generation_config=genai.GenerationConfig(
+            temperature=0.2,
+            response_mime_type="application/json",  # Enforce structured JSON output
+        ),
+    )
+
+    user_message = _build_prompt(transcript_text, template_prompt)
+
+    # Run blocking SDK call in a thread pool to avoid blocking the event loop
+    loop = asyncio.get_event_loop()
+    response = await loop.run_in_executor(
+        None,
+        lambda: model.generate_content(user_message),
+    )
+
+    parsed = json.loads(response.text)
+
+    # Extract token counts from usage_metadata (may be None on some model versions)
+    usage = getattr(response, "usage_metadata", None)
+    prompt_tokens = getattr(usage, "prompt_token_count", 0) or 0
+    completion_tokens = getattr(usage, "candidates_token_count", 0) or 0
+
+    return parsed, prompt_tokens, completion_tokens
+
+
 async def _run_mock_analysis(transcript_text: str) -> tuple[dict, int, int]:
     """Returns mock data instantly — no API calls."""
     await asyncio.sleep(1)  # Simulate a small delay
@@ -179,7 +224,8 @@ async def _run_mock_analysis(transcript_text: str) -> tuple[dict, int, int]:
 async def run_analysis(interview_id: str, user_id: str | None) -> None:
     """
     Called by webhooks.py after transcription completes.
-    Fetches the interview, calls GPT-4o-mini, saves result, notifies user.
+    Fetches the interview, calls the configured AI backend, saves result, notifies user.
+    Supported backends: "mock" | "openai" | "gemini"
     """
     db = get_db()
 
@@ -220,16 +266,18 @@ async def run_analysis(interview_id: str, user_id: str | None) -> None:
     transcript_text = _truncate_transcript(transcript["text"])
 
     # Choose backend
-    logger.info(
-        "run_analysis: using %s backend for interview %s",
-        settings.ANALYSIS_BACKEND,
-        interview_id,
-    )
+    backend = settings.ANALYSIS_BACKEND
+    logger.info("run_analysis: using %s backend for interview %s", backend, interview_id)
 
     try:
-        if settings.ANALYSIS_BACKEND == "mock":
+        if backend == "mock":
             parsed, prompt_tokens, completion_tokens = await _run_mock_analysis(transcript_text)
+        elif backend == "gemini":
+            parsed, prompt_tokens, completion_tokens = await _run_gemini_analysis(
+                transcript_text, template_prompt
+            )
         else:
+            # Default: openai
             parsed, prompt_tokens, completion_tokens = await _run_openai_analysis(
                 transcript_text, template_prompt
             )
@@ -245,6 +293,14 @@ async def run_analysis(interview_id: str, user_id: str | None) -> None:
             })
         return
 
+    # Resolve the model label for audit purposes
+    if backend == "mock":
+        model_label = "mock:mock"
+    elif backend == "gemini":
+        model_label = f"gemini:{settings.GEMINI_MODEL}"
+    else:
+        model_label = f"openai:{settings.OPENAI_MODEL}"
+
     # Build and save ai_analysis document
     now = datetime.now(timezone.utc)
     ai_analysis = {
@@ -257,7 +313,7 @@ async def run_analysis(interview_id: str, user_id: str | None) -> None:
         "questions_answers": parsed.get("questions_answers", []),
         "strengths":         parsed.get("strengths", []),
         "red_flags":         parsed.get("red_flags", []),
-        "model_used":        f"{settings.ANALYSIS_BACKEND}:{settings.OPENAI_MODEL}",
+        "model_used":        model_label,
         "prompt_tokens":     prompt_tokens,
         "completion_tokens": completion_tokens,
         "analysed_at":       now,
