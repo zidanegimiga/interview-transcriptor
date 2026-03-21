@@ -70,11 +70,8 @@ export default function LoginPage() {
             ) : (
               <Image src="/light-big.png" alt="Logo" width={240} height={128} />
             )}
-            {/* <Sparkles className="w-6 h-6 text-emerald-400" strokeWidth={1.5} /> */}
           </div>
-          {/* <h1 className="text-2xl font-bold text-gradient-brand">
-            AV Capture
-          </h1> */}
+
           <p className="text-muted-foreground text-sm mt-1">
             Sign in to your account
           </p>

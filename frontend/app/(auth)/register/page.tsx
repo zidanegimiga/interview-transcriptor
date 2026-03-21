@@ -10,30 +10,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import Image from "next/image";
+import { useTheme } from "next-themes";
 
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [name, setName]         = useState("");
-  const [email, setEmail]       = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading]   = useState(false);
+  const { theme, setTheme } = useTheme();
+  const [loading, setLoading] = useState(false);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
-        method:  "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password }),
       });
       const data = await res.json();
       if (!res.ok) {
         toast({
-          title:       "Registration failed",
+          title: "Registration failed",
           description: data.error,
-          variant:     "destructive",
+          variant: "destructive",
         });
         return;
       }
@@ -59,8 +62,12 @@ export default function RegisterPage() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-4 glow-primary-sm">
-            <Sparkles className="w-6 h-6 text-emerald-400" strokeWidth={1.5} />
+          <div className="inline-flex items-center justify-center">
+            {theme === "dark" ? (
+              <Image src="/dark-big.png" alt="Logo" width={240} height={128} />
+            ) : (
+              <Image src="/light-big.png" alt="Logo" width={240} height={128} />
+            )}
           </div>
           <h1 className="text-2xl font-bold text-gradient-brand">
             Create Account
@@ -77,7 +84,10 @@ export default function RegisterPage() {
                 Full Name
               </Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                <User
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+                  strokeWidth={1.5}
+                />
                 <Input
                   id="name"
                   type="text"
@@ -95,7 +105,10 @@ export default function RegisterPage() {
                 Email
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                <Mail
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+                  strokeWidth={1.5}
+                />
                 <Input
                   id="email"
                   type="email"
@@ -109,11 +122,17 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm text-muted-foreground">
+              <Label
+                htmlFor="password"
+                className="text-sm text-muted-foreground"
+              >
                 Password
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                <Lock
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+                  strokeWidth={1.5}
+                />
                 <Input
                   id="password"
                   type="password"
