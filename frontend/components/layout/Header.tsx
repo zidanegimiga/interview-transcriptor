@@ -15,11 +15,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const TITLES: Record<string, string> = {
-  "/dashboard":            "Dashboard",
-  "/dashboard/upload":     "Upload Interview",
+  "/dashboard": "Dashboard",
+  "/dashboard/upload": "Upload Interview",
   "/dashboard/interviews": "Interviews",
-  "/dashboard/templates":  "Templates",
-  "/dashboard/settings":   "Settings",
+  "/dashboard/templates": "Templates",
+  "/dashboard/settings": "Settings",
 };
 
 function getTitle(pathname: string): string {
@@ -33,14 +33,19 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const { data: session }   = useSession();
+  const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
-  const pathname            = usePathname();
-  const title               = getTitle(pathname);
+  const pathname = usePathname();
+  const title = getTitle(pathname);
 
-  const user     = session?.user;
+  const user = session?.user;
   const initials = user?.name
-    ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+    ? user.name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
     : "?";
 
   return (
@@ -67,8 +72,14 @@ export function Header({ onMenuClick }: HeaderProps) {
           className="w-8 h-8 text-muted-foreground hover:text-foreground relative"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
         >
-          <Sun  className="w-4 h-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"  strokeWidth={1.5} />
-          <Moon className="absolute w-4 h-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" strokeWidth={1.5} />
+          <Sun
+            className="w-4 h-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
+            strokeWidth={1.5}
+          />
+          <Moon
+            className="absolute w-4 h-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
+            strokeWidth={1.5}
+          />
           <span className="sr-only">Toggle theme</span>
         </Button>
 
@@ -94,11 +105,16 @@ export function Header({ onMenuClick }: HeaderProps) {
           <DropdownMenuContent align="end" className="w-48">
             <div className="px-2 py-1.5">
               <p className="text-xs font-medium">{user?.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.email}
+              </p>
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <a href="/dashboard/settings" className="flex items-center gap-2 text-sm cursor-pointer">
+              <a
+                href="/dashboard/settings"
+                className="flex items-center gap-2 text-sm cursor-pointer"
+              >
                 <User className="w-3.5 h-3.5" strokeWidth={1.5} />
                 Settings
               </a>

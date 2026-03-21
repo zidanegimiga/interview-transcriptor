@@ -12,8 +12,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Audio Sentiment Analysis Platform",
-    default:  "Audio Sentiment Analysis Platform",
+    template: "%s | AV Capture",
+    default:  "AV Capture",
   },
   description: "AI-powered transcription and analysis",
 };

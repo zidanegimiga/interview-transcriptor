@@ -14,12 +14,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
+import Image from "next/image";
+import { useTheme } from "next-themes";
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard",            icon: LayoutDashboard },
-  { label: "Upload",    href: "/dashboard/upload",     icon: Upload },
-  { label: "Interviews",href: "/dashboard/interviews", icon: FileAudio },
-  { label: "Templates", href: "/dashboard/templates",  icon: BookTemplate },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Upload", href: "/dashboard/upload", icon: Upload },
+  { label: "Interviews", href: "/dashboard/interviews", icon: FileAudio },
+  { label: "Templates", href: "/dashboard/templates", icon: BookTemplate },
 ];
 
 interface SidebarProps {
@@ -29,17 +31,18 @@ interface SidebarProps {
 
 function NavContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
 
   return (
     <>
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-border">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-          <Sparkles className="w-4 h-4 text-emerald-500" strokeWidth={1.5} />
-        </div>
-        <div>
-          <p className="text-sm font-semibold leading-none">Sentiment Analysis Platform</p>
-          <p className="text-[11px] text-muted-foreground mt-2">Interview Analysis</p>
+        <div className="flex items-center justify-center">
+          {theme === "light" ? (
+            <Image src="/light.png" alt="Logo" width={80} height={80} />
+          ) : (
+            <Image src="/dark.png" alt="Logo" width={80} height={80} />
+          )}
         </div>
         {/* Close button — mobile only */}
         {onClose && (
@@ -67,7 +70,7 @@ function NavContent({ onClose }: { onClose?: () => void }) {
                   "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
                   isActive
                     ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent",
                 )}
               >
                 {isActive && (
@@ -82,7 +85,7 @@ function NavContent({ onClose }: { onClose?: () => void }) {
                     "w-4 h-4 relative z-10 transition-colors",
                     isActive
                       ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-muted-foreground group-hover:text-foreground"
+                      : "text-muted-foreground group-hover:text-foreground",
                   )}
                   strokeWidth={1.5}
                 />
@@ -113,7 +116,9 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     } else {
       document.body.style.overflow = "";
     }
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [mobileOpen]);
 
   return (
