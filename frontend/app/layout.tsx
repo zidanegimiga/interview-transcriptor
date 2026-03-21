@@ -13,7 +13,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: {
     template: "%s | AV Capture",
-    default:  "AV Capture",
+    default: "AV Capture",
   },
   description: "AI-powered transcription and analysis",
 };

@@ -1,8 +1,4 @@
-import {
-  FileAudio,
-  FileVideo,
-} from "lucide-react";
-
+import { FileAudio, FileVideo } from "lucide-react";
 
 const FileIcon = ({ type }: { type: string }) => {
   const isVideo = type.startsWith("video/");
@@ -12,6 +8,6 @@ const FileIcon = ({ type }: { type: string }) => {
       <Icon className="w-5 h-5 text-emerald-500" strokeWidth={1.5} />
     </div>
   );
-}
+};
 
-export default FileIcon
+export default FileIcon;

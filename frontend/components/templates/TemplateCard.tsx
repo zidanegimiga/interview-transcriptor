@@ -9,19 +9,18 @@ import {
   Lock,
   ChevronDown,
   ChevronUp,
-  Sparkles,
+  BookLock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
 
 const TemplateCard = ({
   template,
   onEdit,
   onDelete,
 }: {
-  template:  Template;
-  onEdit:    (t: Template) => void;
-  onDelete:  (id: string) => void;
+  template: Template;
+  onEdit: (t: Template) => void;
+  onDelete: (id: string) => void;
 }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -37,21 +36,29 @@ const TemplateCard = ({
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 min-w-0">
             {/* Icon */}
-            <div className={cn(
-              "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 border",
-              template.is_system
-                ? "bg-emerald-500/10 border-emerald-500/20"
-                : "bg-blue-500/10 border-blue-500/20"
-            )}>
-              {template.is_system
-                ? <Sparkles className="w-4 h-4 text-emerald-500" strokeWidth={1.5} />
-                : <BookOpen  className="w-4 h-4 text-blue-500"    strokeWidth={1.5} />
-              }
+            <div
+              className={cn(
+                "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 border",
+                template.is_system
+                  ? "bg-emerald-500/10 border-emerald-500/20"
+                  : "bg-blue-500/10 border-blue-500/20",
+              )}
+            >
+              {template.is_system ? (
+                <BookLock
+                  className="w-4 h-4 text-emerald-500"
+                  strokeWidth={1.5}
+                />
+              ) : (
+                <BookOpen className="w-4 h-4 text-blue-500" strokeWidth={1.5} />
+              )}
             </div>
 
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold truncate">{template.name}</p>
+                <p className="text-sm font-semibold truncate">
+                  {template.name}
+                </p>
                 {template.is_system && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex-shrink-0">
                     <Lock className="w-2.5 h-2.5" strokeWidth={2} />
@@ -94,7 +101,9 @@ const TemplateCard = ({
         {template.focus_areas?.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-3">
             {template.focus_areas.map((area) => (
-              <span key={area} className="keyword-pill">{area}</span>
+              <span key={area} className="keyword-pill">
+                {area}
+              </span>
             ))}
           </div>
         )}
@@ -105,10 +114,16 @@ const TemplateCard = ({
             className="flex items-center gap-1 mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors"
             onClick={() => setExpanded(!expanded)}
           >
-            {expanded
-              ? <><ChevronUp   className="w-3 h-3" strokeWidth={1.5} /> Hide prompt</>
-              : <><ChevronDown className="w-3 h-3" strokeWidth={1.5} /> View prompt</>
-            }
+            {expanded ? (
+              <>
+                <ChevronUp className="w-3 h-3" strokeWidth={1.5} /> Hide prompt
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-3 h-3" strokeWidth={1.5} /> View
+                prompt
+              </>
+            )}
           </button>
         )}
       </div>
@@ -133,6 +148,6 @@ const TemplateCard = ({
       </AnimatePresence>
     </motion.div>
   );
-}
+};
 
 export default TemplateCard;

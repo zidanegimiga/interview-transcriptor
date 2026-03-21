@@ -22,8 +22,11 @@ const InterviewRow = ({ interview }: { interview: Interview }) => {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate">{interview.title}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {formatFileSize(interview.file_size)} · {formatDuration(interview.duration_seconds)} ·{" "}
-            {formatDistanceToNow(new Date(interview.created_at), { addSuffix: true })}
+            {formatFileSize(interview.file_size)} ·{" "}
+            {formatDuration(interview.duration_seconds)} ·{" "}
+            {formatDistanceToNow(new Date(interview.created_at), {
+              addSuffix: true,
+            })}
           </p>
         </div>
 
@@ -38,6 +41,6 @@ const InterviewRow = ({ interview }: { interview: Interview }) => {
       </motion.div>
     </Link>
   );
-}
+};
 
-export default InterviewRow
+export default InterviewRow;

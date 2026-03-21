@@ -27,17 +27,18 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { formatDuration, formatSize } from "@/lib/utils";
 
-
 const InterviewCard = ({
   interview,
   onDelete,
   onRetranscribe,
 }: {
-  interview:      Interview;
-  onDelete:       (id: string) => void;
+  interview: Interview;
+  onDelete: (id: string) => void;
   onRetranscribe: (id: string) => void;
 }) => {
-  const isProcessing = ["queued", "transcribing", "analysing"].includes(interview.status);
+  const isProcessing = ["queued", "transcribing", "analysing"].includes(
+    interview.status,
+  );
 
   return (
     <motion.div
@@ -118,7 +119,9 @@ const InterviewCard = ({
             </span>
             <span className="text-xs text-muted-foreground">·</span>
             <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(interview.created_at), { addSuffix: true })}
+              {formatDistanceToNow(new Date(interview.created_at), {
+                addSuffix: true,
+              })}
             </span>
 
             {interview.ai_analysis?.sentiment?.overall && (
@@ -146,6 +149,6 @@ const InterviewCard = ({
       </div>
     </motion.div>
   );
-}
+};
 
 export default InterviewCard;

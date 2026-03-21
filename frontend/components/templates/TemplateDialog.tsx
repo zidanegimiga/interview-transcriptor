@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Loader2,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +15,11 @@ import {
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { EMPTY_FORM, Template, TemplateFormData } from "@/shared/types/dashboard";
+import {
+  EMPTY_FORM,
+  Template,
+  TemplateFormData,
+} from "@/shared/types/dashboard";
 
 const TemplateDialog = ({
   open,
@@ -25,21 +27,21 @@ const TemplateDialog = ({
   onClose,
   onSaved,
 }: {
-  open:    boolean;
+  open: boolean;
   editing: Template | null;
   onClose: () => void;
   onSaved: (t: Template) => void;
 }) => {
-  const { toast }              = useToast();
-  const [form, setForm]        = useState<TemplateFormData>(EMPTY_FORM);
-  const [saving, setSaving]    = useState(false);
+  const { toast } = useToast();
+  const [form, setForm] = useState<TemplateFormData>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (editing) {
       setForm({
-        name:        editing.name,
+        name: editing.name,
         description: editing.description,
-        prompt:      editing.prompt,
+        prompt: editing.prompt,
         focus_areas: editing.focus_areas?.join(", ") ?? "",
       });
     } else {
@@ -54,9 +56,9 @@ const TemplateDialog = ({
   async function handleSave() {
     if (!form.name.trim() || !form.prompt.trim()) {
       toast({
-        title:       "Required fields missing",
+        title: "Required fields missing",
         description: "Name and prompt are required.",
-        variant:     "destructive",
+        variant: "destructive",
       });
       return;
     }
@@ -64,9 +66,9 @@ const TemplateDialog = ({
     setSaving(true);
     try {
       const payload = {
-        name:        form.name.trim(),
+        name: form.name.trim(),
         description: form.description.trim(),
-        prompt:      form.prompt.trim(),
+        prompt: form.prompt.trim(),
         focus_areas: form.focus_areas
           .split(",")
           .map((s) => s.trim())
@@ -85,9 +87,9 @@ const TemplateDialog = ({
       onClose();
     } catch (e: any) {
       toast({
-        title:       "Save failed",
+        title: "Save failed",
         description: e.message,
-        variant:     "destructive",
+        variant: "destructive",
       });
     } finally {
       setSaving(false);
@@ -129,7 +131,9 @@ const TemplateDialog = ({
           <div className="space-y-2">
             <Label className="text-sm text-muted-foreground">
               Focus Areas
-              <span className="ml-1 text-muted-foreground/60">(comma separated)</span>
+              <span className="ml-1 text-muted-foreground/60">
+                (comma separated)
+              </span>
             </Label>
             <Input
               placeholder="e.g. system design, leadership, problem solving"
@@ -167,14 +171,15 @@ const TemplateDialog = ({
             disabled={saving}
             className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
           >
-            {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} />}
+            {saving && (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} />
+            )}
             {editing ? "Save changes" : "Create template"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
-
+};
 
 export default TemplateDialog;

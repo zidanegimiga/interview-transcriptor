@@ -1,6 +1,5 @@
 import { Skeleton } from "../ui/skeleton";
 
-
 const CardSkeleton = () => {
   return (
     <div className="glass rounded-xl p-4">
@@ -17,6 +16,6 @@ const CardSkeleton = () => {
       </div>
     </div>
   );
-}
+};
 
-export default CardSkeleton
+export default CardSkeleton;

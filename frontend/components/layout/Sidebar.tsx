@@ -9,7 +9,6 @@ import {
   FileAudio,
   BookTemplate,
   Settings,
-  Sparkles,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";

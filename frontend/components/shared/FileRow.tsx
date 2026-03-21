@@ -29,7 +29,9 @@ const FileRow = ({
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground truncate">
               {item.file.name}
-              <span className="ml-2 text-xs">({formatSize(item.file.size)})</span>
+              <span className="ml-2 text-xs">
+                ({formatSize(item.file.size)})
+              </span>
             </p>
 
             {item.status === "idle" && (
@@ -42,15 +44,24 @@ const FileRow = ({
             )}
 
             {item.status === "uploading" && (
-              <Loader2 className="w-4 h-4 text-emerald-500 animate-spin flex-shrink-0" strokeWidth={1.5} />
+              <Loader2
+                className="w-4 h-4 text-emerald-500 animate-spin flex-shrink-0"
+                strokeWidth={1.5}
+              />
             )}
 
             {item.status === "success" && (
-              <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" strokeWidth={1.5} />
+              <CheckCircle
+                className="w-4 h-4 text-emerald-500 flex-shrink-0"
+                strokeWidth={1.5}
+              />
             )}
 
             {item.status === "error" && (
-              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0" strokeWidth={1.5} />
+              <AlertCircle
+                className="w-4 h-4 text-destructive flex-shrink-0"
+                strokeWidth={1.5}
+              />
             )}
           </div>
 
@@ -64,9 +75,7 @@ const FileRow = ({
           )}
 
           {item.status === "success" && (
-            <p className="text-xs text-emerald-500">
-              Uploaded successfully
-            </p>
+            <p className="text-xs text-emerald-500">Uploaded successfully</p>
           )}
 
           {item.status === "error" && (
@@ -76,6 +85,6 @@ const FileRow = ({
       </div>
     </motion.div>
   );
-}
+};
 
-export default FileRow
+export default FileRow;

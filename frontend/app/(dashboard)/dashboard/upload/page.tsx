@@ -8,7 +8,7 @@ import {
   type FileRejection,
 } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Loader2, Sparkles } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -242,10 +242,7 @@ export default function UploadPage() {
             )}
           >
             {isDragActive ? (
-              <Sparkles
-                className="w-7 h-7 text-emerald-400 animate-breathing"
-                strokeWidth={1.5}
-              />
+              <></>
             ) : (
               <Upload className="w-7 h-7 text-emerald-500" strokeWidth={1.5} />
             )}

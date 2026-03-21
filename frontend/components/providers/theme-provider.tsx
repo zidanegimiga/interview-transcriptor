@@ -9,9 +9,5 @@ type Props = ThemeProviderProps & {
 };
 
 export function ThemeProvider({ children, ...props }: Props) {
-  return (
-    <NextThemesProvider {...props}>
-      {children}
-    </NextThemesProvider>
-  );
+  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }
