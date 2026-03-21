@@ -1,6 +1,6 @@
-# HR Interview Platform
+# Audio Transcriber and Analyser
 
-A web app for HR teams to upload interview recordings and get AI generated transcripts and analysis. You upload a file, Deepgram transcribes it, and GPT-4o-mini pulls out the key insights. Everything happens in the background and the UI updates in real time.
+A web app for teams to upload  recordings and get AI generated transcripts and analysis. You upload a file, Deepgram transcribes it, and GPT-4o-mini pulls out the key insights. Everything happens in the background and the UI updates in real time.
 
 ---
 
